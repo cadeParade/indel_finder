@@ -10,12 +10,21 @@
 library("seqinr")
 library("Biostrings")
 
-search.terms <- DNAStringSet(c(	"first_binding_site"="ATCTTCAGC", 
-            				          	"target_site"="CATAAAA", 
-            				          	"second_binding_site"="GATGAGGTT", 
-            				          	"primer1"="GCGCAGGAATTTCAAAAACACTA", 
-                      					"primer2"="ACATTTGCCTGAATGGAGGAGT", 
-                      					"upstream_site"="AAGTGGGTGGA"))	
+#gria
+search.terms <- DNASTringSet(c("target_site"="TCGTCCAATAGCTT
+CT", 
+                               "second_binding_site"="GATGAGGTT", 
+                               "primer1"="GCGCAGGAATTTCAAAAACACTA", 
+                               "primer2"="ACATTTGCCTGAATGGAGGAGT", 
+                               "upstream_site"="AAGTGGGTGGA"))	))
+
+#nrxn
+#search.terms <- DNAStringSet(c(	"first_binding_site"="ATCTTCAGC", 
+#            				          	"target_site"="CATAAAA", 
+#            				          	"second_binding_site"="GATGAGGTT", 
+#            				          	"primer1"="GCGCAGGAATTTCAAAAACACTA", 
+#                      					"primer2"="ACATTTGCCTGAATGGAGGAGT", 
+#                      					"upstream_site"="AAGTGGGTGGA"))	
 #search.terms.dict <- PDict(search.terms)
 
 bp.cutoff.value <- 250
@@ -23,6 +32,19 @@ percent.n.cutoff.value <- 50
 filename <- "nrxn1.seq"
 table.length <- NA
 input.search.terms<- function(){}
+
+############## Find reverse complement of search terms #######################
+
+#finds reverse complement of search terms
+rev.comp.search.terms <- DNAStringSet()
+for (i in seq_along(search.terms)){
+  rev.comp.search.terms[i] <- reverseComplement(search.terms[i])
+}
+
+#names reverse complement items in search term
+names(rev.comp.search.terms)<-paste(names(search.terms),"rev",sep="_")
+
+all.search.terms <- c(search.terms, rev.comp.search.terms)
 
 ############## Divides raw text into table ################################
 
@@ -65,24 +87,18 @@ sequence.table <- as.data.frame(cbind("well_no"=well.number,
 						                          "sequence"=sequence.column), 
                                 stringsAsFactors= FALSE)
 
-
+#trims sequence string to remove some leading and trailing Ns
+sequence.table$trimmed_sequences <- substring(sequence.table$sequence,25, 
+                                              nchar(sequence.table$sequence)-50)
 
 #defines length variable to be used in loops
 table.length <- nrow(sequence.table)
 
 ############## Find percentage of N's in each sequence ###########
 
-#trims sequence string to remove some leading and trailing Ns
-sequence.table$trimmed_sequences <- substring(sequence.table$sequence,25, 
-                                              nchar(sequence.table$sequence)-50)
-
 #converts sequence column into set of DNAString class
-DNA.sequences <- DNAStringSet(sequence.table$trimmed_sequences)
-
-#trims N's off begin and end of each sequence
-#DNA.sequences <- trimLRPatterns(Lpattern="NNNNNNNNNNNNNNNNNNNNNNNNN", Rpattern="NNNNNNNNNNNNNNNNNNNNNNNNN", 
- #                               DNA.sequences, Lfixed = F, Rfixed=F)
-
+DNA.sequences<- DNAStringSet(sequence.table$sequence)
+DNA.sequences.trimmed <- DNAStringSet(sequence.table$trimmed_sequences)
 
 
 sequence.length.vector <- width(DNA.sequences)
@@ -102,19 +118,23 @@ master.table$total_bps <-as.numeric(as.character(master.table$total_bps))
 master.table$num_Ns <-as.numeric(as.character(master.table$num_Ns))
 master.table$percent_ns <-as.numeric(as.character(master.table$percent_ns))
 
- 
-############## Find reverse complement of search terms #######################
+############## Screens sequence char stats ####################################
+master.table$initial_screen <- "OK"
 
-#finds reverse complement of search terms
-rev.comp.search.terms <- DNAStringSet()
-for (i in seq_along(search.terms)){
-  rev.comp.search.terms[i] <- reverseComplement(search.terms[i])
+#annotates master.table
+for(i in 1:table.length){
+  if (master.table$total_bps[i] < bp.cutoff.value && 
+      master.table$percent_ns[i] > percent.n.cutoff.value){
+        master.table$initial_screen[i] <- "Omitted: Too many N's + low bp count"
+   } else if (master.table$total_bps[i] < bp.cutoff.value){
+      master.table$initial_screen[i] <- "Omitted: Low bp count"
+   } else if( master.table$percent_ns[i] > percent.n.cutoff.value){
+      master.table$initial_screen[i] <- "Omitted: Too many 'N's "
+   } 
 }
 
-#names reverse complement items in search term
-names(rev.comp.search.terms)<-paste(names(search.terms),"rev",sep="_")
 
-all.search.terms <- c(search.terms, rev.comp.search.terms)
+ 
 
 ############## Perform matchLRPattern ########################################
 
@@ -123,46 +143,32 @@ master.table$sequence_is_reverse <- NA
 master.table$LRmatch_length <- 0
 
 for(i in 1:table.length){
-  results[i] <- matchLRPatterns(all.search.terms$first_binding_site, 
-                                all.search.terms$second_binding_site, 
-                                20, 
-                                DNA.sequences[[i]], 
-                                Lfixed=F, 
-                                Rfixed=F)  
-  if ( length(width(results[[i]]))== 1){
-   master.table$sequence_is_reverse[i] <- "forward"
-   master.table$LRmatch_length[i] <- width(results[[i]])
-  }
- if ( length(width(results[[i]]))== 0){
-    results[i] <- matchLRPatterns(all.search.terms$second_binding_site_rev, 
-                                  all.search.terms$first_binding_site_rev, 
+  if(master.table$initial_screen[i] == "OK"){
+    results[i] <- matchLRPatterns(all.search.terms$first_binding_site, 
+                                  all.search.terms$second_binding_site, 
                                   20, 
-                                  DNA.sequences[[i]], 
+                                  DNA.sequences.trimmed[[i]], 
                                   Lfixed=F, 
-                                  Rfixed=F)
- 
-    if (length(width(results[[i]])) == 1){
-       master.table$sequence_is_reverse[i] <- "reverse"
-       master.table$LRmatch_length[i] <- width(results[[i]])
+                                  Rfixed=F)  
+    if ( length(width(results[[i]]))== 1){
+     master.table$sequence_is_reverse[i] <- "forward"
+     master.table$LRmatch_length[i] <- width(results[[i]])
     }
-  }
+   if ( length(width(results[[i]]))== 0){
+      results[i] <- matchLRPatterns(all.search.terms$second_binding_site_rev, 
+                                    all.search.terms$first_binding_site_rev, 
+                                    20, 
+                                    DNA.sequences.trimmed[[i]], 
+                                    Lfixed=F, 
+                                    Rfixed=F)
+   
+      if (length(width(results[[i]])) == 1){
+         master.table$sequence_is_reverse[i] <- "reverse"
+         master.table$LRmatch_length[i] <- width(results[[i]])
+      }
+    }
+  } 
 }
-
-
-
-
-#for(i in 1:table.length){
-#  print("hi")
-#  if (length(width(results[[i]])) == 0) {
-#    print("hi")
-#    reverse.results <- matchLRPatterns(search.terms$first_binding_site_rev, 
-#                                       search.terms$second_binding_site_rev, 
-##                                       20, 
-#                                       DNA.sequences[[i]], 
-#                                       Lfixed=F, 
-#                                       Rfixed=F)
-#  }
-#}
 
 
 ############## Decides whether sequence is forward or reverse   ############################
@@ -215,21 +221,7 @@ for(i in 1:table.length){
 #   }
 #}
 
-# ############## Screens sequence char stats ####################################
-# master.table$initial_screen <- "OK"
-# 
-# #annotates master.table
-# for(i in 1:table.length){
-#   if( master.table$total_bps[i] < bp.cutoff.value &&
-#         master.table$percent_ns[i] > percent.n.cutoff.value){
-#     master.table$initial_screen[i] <- "Omitted: Too many N's + low bp count"
-#   } else if (master.table$total_bps[i] < bp.cutoff.value){
-#     master.table$initial_screen[i] <- "Omitted: Low bp count"
-#   } else if( master.table$percent_ns[i] > percent.n.cutoff.value){
-#     master.table$initial_screen[i] <- "Omitted: Too many 'N's "
-#   } #else (it.will.analyze.this.row[i] <- TRUE)
-# }
-# 
+
 # ############# Marks bad rows ##################################################
 # 
 # master.table$analyze <- FALSE
@@ -326,8 +318,8 @@ for(i in 1:table.length){
 # 
 # ############## Write to files #################################################
 # 
-# write.table(master.table, file = "summary.all.csv", sep = ",", col.names = NA,
-#                          qmethod = "double")
+ write.table(master.table, file = "summary.all.csv", sep = ",", col.names = NA,
+                          qmethod = "double")
 # 
 # #align.table <- as.data.frame(matrix(NA, nrow=nrow(working.table), ncol=2) )
 # 
