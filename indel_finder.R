@@ -10,15 +10,15 @@
 library("seqinr")
 library("Biostrings")
 
-#gria
-search.terms <- DNASTringSet(c("target_site"="TCGTCCAATAGCTT
-CT", 
-                               "second_binding_site"="GATGAGGTT", 
+#gria search terms
+search.terms <- DNAStringSet(c("first_binding_site" = "TCGTCCAATAGCTTCT",
+                               "target_site"="CAGTCACGCACGCCTgt", 
+                               "second_binding_site"="gagtttctgctcttta", 
                                "primer1"="GCGCAGGAATTTCAAAAACACTA", 
                                "primer2"="ACATTTGCCTGAATGGAGGAGT", 
-                               "upstream_site"="AAGTGGGTGGA"))	))
+                               "upstream_site"="AAGTGGGTGGA"))
 
-#nrxn
+#nrxn search terms
 #search.terms <- DNAStringSet(c(	"first_binding_site"="ATCTTCAGC", 
 #            				          	"target_site"="CATAAAA", 
 #            				          	"second_binding_site"="GATGAGGTT", 
@@ -29,9 +29,11 @@ CT",
 
 bp.cutoff.value <- 250
 percent.n.cutoff.value <- 50
-filename <- "nrxn1.seq"
+filename <- "gria_sequence.seq"
 table.length <- NA
 input.search.terms<- function(){}
+read.file <- function(){}
+find.reverse.complement.DNAStringSet <- function(){}
 
 ############## Find reverse complement of search terms #######################
 
@@ -47,19 +49,13 @@ names(rev.comp.search.terms)<-paste(names(search.terms),"rev",sep="_")
 all.search.terms <- c(search.terms, rev.comp.search.terms)
 
 ############## Divides raw text into table ################################
-
 #reads in file
-raw.sequence.file <- readLines(filename)
-#removes line breaks
-collapsed.sequence.file <- paste(raw.sequence.file, collapse="")
-#splits by ">" (where the beginning of each sequence is)
-split.sequence.file <- strsplit(collapsed.sequence.file, ">")
-#converts list to vector with ~96 objects
-vector.sequence.file <- unlist(split.sequence.file)
-#splits again to separate title string
-split.title.and.sequence <- strsplit(vector.sequence.file, "seq")
-#remove first item
-split.title.and.sequence<-split.title.and.sequence[2:length(split.title.and.sequence)]
+raw.sequence.file <- read.fasta("gria_sequence.seq", 
+                                seqtype = "DNA", 
+                                as.string = TRUE, 
+                                set.attributes = FALSE, 
+                                forceDNAtolower = FALSE)
+
 
 #declares vectors for loop below
 plate.row<-vector(mode="character")
@@ -68,9 +64,9 @@ well.number<-vector(mode="character")
 sequence.column <- vector(mode="character")
 
 # puts well number and sequence in different columns
-#splices well number
-for(i in seq_along(split.title.and.sequence)){
-	current<-split.title.and.sequence[[i]]
+# splices well number
+for(i in seq_along(raw.sequence.file)){
+	current<-names(raw.sequence.file[i])
 	split.well.number <- regmatches(current[1],	regexec("([A-H])(\\d\\d)",current[1]))
 	split.well.number<-unlist(split.well.number)
 	
@@ -78,14 +74,14 @@ for(i in seq_along(split.title.and.sequence)){
 	plate.row[i]<- split.well.number[2]
 	plate.column[i]<-split.well.number[3]
 	
-	sequence.column[i] <- current[2]                              
+	sequence.column[i] <- as.character(raw.sequence.file[i])                              
 }
 
 sequence.table <- as.data.frame(cbind("well_no"=well.number, 
 						                          "plate_row"=plate.row, 
                                       "plate_column"=plate.column,
 						                          "sequence"=sequence.column), 
-                                stringsAsFactors= FALSE)
+                                  stringsAsFactors= FALSE)
 
 #trims sequence string to remove some leading and trailing Ns
 sequence.table$trimmed_sequences <- substring(sequence.table$sequence,25, 
@@ -171,68 +167,7 @@ for(i in 1:table.length){
 }
 
 
-############## Decides whether sequence is forward or reverse   ############################
-# 
-# #converts sequence column into set of DNAString class
-# DNA.sequences <- DNAStringSet(sequence.table$sequence)
-# 
-# #sets up logical table to fill with T/F whether each search term is found in a sequence
-# search.terms.found <- data.frame(matrix(NA, nrow = table.length,
-#                                         ncol = length(all.search.terms)))
-# names(search.terms.found) <- names(all.search.terms)
-# t#emp.vector <- vector(length=table.length)
-# 
-# 
-# for(i in 1:length(all.search.terms)){
-# #  print("hi")
-#   temp.vector[i] <- vcountPattern(as.character(all.search.terms[i]),
-#                                DNA.sequences[i],
-#                                #max.mismatch=round(0.1*width(all.search.terms[i])), 
-#                                #fixed=FALSE)  
-#                                             )
-#   search.terms.found[,i] <- temp.vector
-# }
-#print(head(search.terms.found))
 
-#for(i in 1:12)
-
-#for each search term, enters T/F if found in that sequence
-#for (i in 1:length(all.search.terms)){
-#  search.terms.found[,i] <- grepl(all.search.terms[i], master.table$sequence, 
-#                                  ignore.case = TRUE)
-#}
-
-#splits search.terms.found into forward and reverse search terms
-#sequence.test.forward <- search.terms.found[,1:6]
-#sequence.test.reverse <- search.terms.found[,7:12]
-
-#Adds direction column to master table. Fills with "not found"
-#master.table$direction <- "not_found"
-
-
-#Tests each row to see if any forward sequences are found, any reverse sequences
-#are found
-#for (i in 1:table.length){
-#  if(any(sequence.test.forward[i,] == TRUE)){
-#    master.table$direction[i] <- "forward"
-#   } 
-#  if(any(sequence.test.reverse[i,] == TRUE)){
-#    master.table$direction[i] <- "reverse"
-#   }
-#}
-
-
-# ############# Marks bad rows ##################################################
-# 
-# master.table$analyze <- FALSE
-# 
-# for(i in 1:table.length){
-#   if(master.table$initial_screen[i] == "OK" 
-#      && master.table$direction[i] != "not_found"){
-#         master.table$analyze[i] <- TRUE
-#   }
-# }
-# 
 # ############# Gets reverse complement of reversed sequences ##################
 # #sequences.to.reverse <- master.table[master.table$reversed,]
 # master.table$reversed_sequence <- "not reversed"
@@ -243,63 +178,8 @@ for(i in 1:table.length){
 #     master.table$reversed_sequence[i]<-toupper(c2s(rev(comp(s2c(master.table$sequence[i]), ambiguous = T))))
 #   }
 # }
-# 
-# ############# Makes master search column ##############################
-# 
-# master.table$sequences_to_align <- "-"
-# for(i in 1:table.length){
-#   if (master.table$direction[i] == "forward"){ 
-#     master.table$sequences_to_align[i] <- master.table$sequence[i] 
-#   }
-#   if (master.table$direction[i] == "reverse"){
-#     master.table$sequences_to_align[i] <- master.table$reversed_sequence[i]
-#   }
-# }
-# 
-# #this is for printing to the FASTA file. 
-# working.table <- subset(master.table, master.table$analyze)
-# #working.table <- master.table[,master.table$analyze == TRUE]
-# 
-# ############# Finds matches of target sequences ##########################
-# #master.table$match_length <- "No match"
-# 
-# #match <- matchPattern(WT, C3, max.mismatch=5,  with.indels = TRUE)
-# 
-# #match.length <- width(match)
-# 
-# #for (i in 1:table.length){
-# #  master.table$match_length[i]<- matchPattern(search.terms[3], master.table$sequences_to_align[i])
-# #}
-# #print(head(master.table$match_length))
-# 
-# 
-# ############## Find search terms in sequences #################################
-# 
-# #matches <- list()
-# 
-# #for(i in seq_along(all.search.terms)){
-# #  current.search.term <- all.search.terms[i]
-# #  matches[[i]] <- grep(current.search.term, 
-# #                  master.table$sequence, 
-# #                  ignore.case = TRUE)  
-# #}
-# 
-# #names(matches) <- names(all.search.terms)
-# #print (matches)
-# 
-# #binding1 <- unique(c(matches[[1]], matches[[7]]))
-# #binding2 <- unique(c(matches[[2]], matches[[8]]))
-# #target <- unique(c(matches[[3]], matches[[9]]))
-# #primer1 <- unique(c(matches[[4]], matches[[10]]))
-# #primer2 <- unique(c(matches[[5]], matches[[11]]))
-# #upstream <- unique(c(matches[[6]], matches[[12]]))
-# 
-# #print(binding1)
-# #print("Rows that match binding site 2: ")
-# #print(binding2)
-# #print("Rows that match target site: ")
-# #print(target)
-# 
+
+
 # ############## Input search terms #############################################
 # #input.search.terms <- function(){
 # 	#print(head(sequence.table))
