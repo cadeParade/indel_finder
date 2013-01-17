@@ -118,25 +118,51 @@ all.search.terms <- c(search.terms, rev.comp.search.terms)
 
 ############## Perform matchLRPattern ########################################
 
+results <- list(vector(length=table.length))
+master.table$sequence_is_reverse <- NA
+master.table$LRmatch_length <- 0
+
+for(i in 1:table.length){
+  results[i] <- matchLRPatterns(all.search.terms$first_binding_site, 
+                                all.search.terms$second_binding_site, 
+                                20, 
+                                DNA.sequences[[i]], 
+                                Lfixed=F, 
+                                Rfixed=F)  
+  if ( length(width(results[[i]]))== 1){
+   master.table$sequence_is_reverse[i] <- "forward"
+   master.table$LRmatch_length[i] <- width(results[[i]])
+  }
+ if ( length(width(results[[i]]))== 0){
+    results[i] <- matchLRPatterns(all.search.terms$second_binding_site_rev, 
+                                  all.search.terms$first_binding_site_rev, 
+                                  20, 
+                                  DNA.sequences[[i]], 
+                                  Lfixed=F, 
+                                  Rfixed=F)
  
- #lrmatch <- DNAStringSet(vector(length=6))
- #lrmatch.vec <- DNA.sequences
- target1 <- search.terms$first_binding_site
- target2 <- search.terms$second_binding_site
- 
-#lrmatch <- trimLRPatterns(Lpattern = target1,  subject=DNA.sequences, ranges=TRUE
-#                          ,max.Lmismatch=0, Lfixed=T)
+    if (length(width(results[[i]])) == 1){
+       master.table$sequence_is_reverse[i] <- "reverse"
+       master.table$LRmatch_length[i] <- width(results[[i]])
+    }
+  }
+}
 
 
-for(i in 1:5){
-    m <- matchLRPatterns(target1, target2, 20, DNA.sequences[[i]], Lfixed=F, Rfixed=F)
-    print(m)
-  #                       max.Lmismatch=3, max.Rmismatch=3))
-  #    lrmatch[[i]]<- trimLRPatterns(target1, target2, DNA.sequences[[i]]
-   #                               , Lfixed=F, Rfixed=F)
-      
- }
- 
+
+
+#for(i in 1:table.length){
+#  print("hi")
+#  if (length(width(results[[i]])) == 0) {
+#    print("hi")
+#    reverse.results <- matchLRPatterns(search.terms$first_binding_site_rev, 
+#                                       search.terms$second_binding_site_rev, 
+##                                       20, 
+#                                       DNA.sequences[[i]], 
+#                                       Lfixed=F, 
+#                                       Rfixed=F)
+#  }
+#}
 
 
 ############## Decides whether sequence is forward or reverse   ############################
