@@ -1,11 +1,3 @@
-## This program is meant to take in a set of FASTA sequences and 
-## find out whether a certain set of flanking sequences is present,
-## how many bases are in between them, and what the sequence is.
-
-## There are no functions yet because without functions I can access the 
-## variables in the console and play with them. At the end there wil be 
-## functions!
-
 ############## SETUP ################################
 library("seqinr")
 library("Biostrings")
@@ -16,7 +8,6 @@ search.terms <- DNAStringSet(c(	"first_binding_site"="ATCTTCAGC",
             				          	"primer1"="GCGCAGGAATTTCAAAAACACTA", 
                       					"primer2"="ACATTTGCCTGAATGGAGGAGT", 
                       					"upstream_site"="AAGTGGGTGGA"))	
-#search.terms.dict <- PDict(search.terms)
 
 bp.cutoff.value <- 250
 percent.n.cutoff.value <- 50
@@ -71,16 +62,6 @@ sequence.table <- as.data.frame(cbind("well_no"=well.number,
 table.length <- nrow(sequence.table)
 
 ############## Find percentage of N's in each sequence ###########
-sequence.table$trimmed_sequences <- substring(sequence.table$sequence,
-                                              25, nchar(sequence.table$sequence)-50)
-
-#converts sequence column into set of DNAString class
-DNA.sequences <- DNAStringSet(sequence.table$sequence)
-#trims N's off begin and end of each sequence
-DNA.sequences <- trimLRPatterns(Lpattern="NNNNNNNNNNNNNNNNNNNNNNNNN", Rpattern="NNNNNNNNNNNNNNNNNNNNNNNNN", 
-                                DNA.sequences, Lfixed = F, Rfixed=F)
-
-
 
 sequence.length.vector <- width(DNA.sequences)
 num.ns.vector <- vcountPattern("N", DNA.sequences)
@@ -113,45 +94,32 @@ names(rev.comp.search.terms)<-paste(names(search.terms),"rev",sep="_")
 
 all.search.terms <- c(search.terms, rev.comp.search.terms)
 
-############## Perform matchLRPattern ########################################
 
-
-
- lrmatch.vec <- DNA.sequences
- target1 <- search.terms[[1]]
- target2 <- search.terms[[2]]
- 
-
-for(i in 1:5){
-   current.sequence <- DNA.sequences[[i]]
-   print(matchLRPatterns(target1, target2, 20, current.sequence
-                         , Lfixed=F, Rfixed=F)) 
-                         #max.Lmismatch=3, max.Rmismatch=3))
- }
- 
+# ############## Find out whether sequence is
+#
 
 ############## Decides whether sequence is forward or reverse   ############################
-# 
-# #converts sequence column into set of DNAString class
-# DNA.sequences <- DNAStringSet(sequence.table$sequence)
-# 
-# #sets up logical table to fill with T/F whether each search term is found in a sequence
-# search.terms.found <- data.frame(matrix(NA, nrow = table.length,
-#                                         ncol = length(all.search.terms)))
-# names(search.terms.found) <- names(all.search.terms)
-# t#emp.vector <- vector(length=table.length)
-# 
-# 
-# for(i in 1:length(all.search.terms)){
-# #  print("hi")
-#   temp.vector[i] <- vcountPattern(as.character(all.search.terms[i]),
-#                                DNA.sequences[i],
-#                                #max.mismatch=round(0.1*width(all.search.terms[i])), 
-#                                #fixed=FALSE)  
-#                                             )
-#   search.terms.found[,i] <- temp.vector
-# }
-#print(head(search.terms.found))
+
+#converts sequence column into set of DNAString class
+DNA.sequences <- DNAStringSet(sequence.table$sequence)
+
+#sets up logical table to fill with T/F whether each search term is found in a sequence
+search.terms.found <- data.frame(matrix(NA, nrow = table.length,
+                                        ncol = length(all.search.terms)))
+names(search.terms.found) <- names(all.search.terms)
+temp.vector <- vector(length=table.length)
+
+
+for(i in 1:length(all.search.terms)){
+  print("hi")
+  temp.vector[i] <- vcountPattern(as.character(all.search.terms[i]),
+                               DNA.sequences[i],
+                               #max.mismatch=round(0.1*width(all.search.terms[i])), 
+                               #fixed=FALSE)  
+                                            )
+  search.terms.found[,i] <- temp.vector
+}
+print(head(search.terms.found))
 
 #for(i in 1:12)
 
