@@ -3,7 +3,7 @@
 ## how many bases are in between them, and what the sequence is.
 
 ## There are no functions yet because without functions I can access the 
-## variables in the console and play with them. At the end there wil be 
+## variables in the console and play with them. At the end there will be 
 ## functions!
 
 ############## SETUP ################################
@@ -11,8 +11,8 @@ library("seqinr")
 library("Biostrings")
 
 search.terms <- DNAStringSet(c(	"first_binding_site"="ATCTTCAGC", 
-            				          	"second_binding_site"="CATAAAA", 
-            				          	"target_site"="GATGAGGTT", 
+            				          	"target_site"="CATAAAA", 
+            				          	"second_binding_site"="GATGAGGTT", 
             				          	"primer1"="GCGCAGGAATTTCAAAAACACTA", 
                       					"primer2"="ACATTTGCCTGAATGGAGGAGT", 
                       					"upstream_site"="AAGTGGGTGGA"))	
@@ -71,14 +71,17 @@ sequence.table <- as.data.frame(cbind("well_no"=well.number,
 table.length <- nrow(sequence.table)
 
 ############## Find percentage of N's in each sequence ###########
-sequence.table$trimmed_sequences <- substring(sequence.table$sequence,
-                                              25, nchar(sequence.table$sequence)-50)
+
+#trims sequence string to remove some leading and trailing Ns
+sequence.table$trimmed_sequences <- substring(sequence.table$sequence,25, 
+                                              nchar(sequence.table$sequence)-50)
 
 #converts sequence column into set of DNAString class
-DNA.sequences <- DNAStringSet(sequence.table$sequence)
+DNA.sequences <- DNAStringSet(sequence.table$trimmed_sequences)
+
 #trims N's off begin and end of each sequence
-DNA.sequences <- trimLRPatterns(Lpattern="NNNNNNNNNNNNNNNNNNNNNNNNN", Rpattern="NNNNNNNNNNNNNNNNNNNNNNNNN", 
-                                DNA.sequences, Lfixed = F, Rfixed=F)
+#DNA.sequences <- trimLRPatterns(Lpattern="NNNNNNNNNNNNNNNNNNNNNNNNN", Rpattern="NNNNNNNNNNNNNNNNNNNNNNNNN", 
+ #                               DNA.sequences, Lfixed = F, Rfixed=F)
 
 
 
@@ -115,20 +118,26 @@ all.search.terms <- c(search.terms, rev.comp.search.terms)
 
 ############## Perform matchLRPattern ########################################
 
-
-
- lrmatch.vec <- DNA.sequences
- target1 <- search.terms[[1]]
- target2 <- search.terms[[2]]
  
+ #lrmatch <- DNAStringSet(vector(length=6))
+ #lrmatch.vec <- DNA.sequences
+ target1 <- search.terms$first_binding_site
+ target2 <- search.terms$second_binding_site
+ 
+#lrmatch <- trimLRPatterns(Lpattern = target1,  subject=DNA.sequences, ranges=TRUE
+#                          ,max.Lmismatch=0, Lfixed=T)
+
 
 for(i in 1:5){
-   current.sequence <- DNA.sequences[[i]]
-   print(matchLRPatterns(target1, target2, 20, current.sequence
-                         , Lfixed=F, Rfixed=F)) 
-                         #max.Lmismatch=3, max.Rmismatch=3))
+    m <- matchLRPatterns(target1, target2, 20, DNA.sequences[[i]], Lfixed=F, Rfixed=F)
+    print(m)
+  #                       max.Lmismatch=3, max.Rmismatch=3))
+  #    lrmatch[[i]]<- trimLRPatterns(target1, target2, DNA.sequences[[i]]
+   #                               , Lfixed=F, Rfixed=F)
+      
  }
  
+
 
 ############## Decides whether sequence is forward or reverse   ############################
 # 
