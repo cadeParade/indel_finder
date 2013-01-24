@@ -19,26 +19,26 @@ library("Biostrings")
 
 
 #gria search terms
-# search.terms <- DNAStringSet(c("first_binding_site" = "TCGTCCAATAGCTTCT",
-#                                "target_site"="CAGTCACGCACGCCTgt", 
-#                                "second_binding_site"="gagtttctgctcttta", 
-#                                "primer1"="GCGCAGGAATTTCAAAAACACTA", 
-#                                "primer2"="ACATTTGCCTGAATGGAGGAGT", 
-#                                "upstream_site"="AAGTGGGTGGA"))
+search.terms <- DNAStringSet(c("first_binding_site" = "TCGTCCAATAGCTTCT",
+                               "target_site"="CAGTCACGCACGCCTgt", 
+                               "second_binding_site"="gagtttctgctcttta", 
+                               "primer1"="GCGCAGGAATTTCAAAAACACTA", 
+                               "primer2"="ACATTTGCCTGAATGGAGGAGT", 
+                               "upstream_site"="AAGTGGGTGGA"))
 
 #nrxn search terms
-search.terms <- DNAStringSet(c(	"first_binding_site"="ATCTTCAGC", 
-           				          	"target_site"="CATAAAA", 
-           				          	"second_binding_site"="GATGAGGTT", 
-           				          	"primer1"="GCGCAGGAATTTCAAAAACACTA", 
-                     					"primer2"="ACATTTGCCTGAATGGAGGAGT", 
-                     					"upstream_site"="AAGTGGGTGGA"))	
+# search.terms <- DNAStringSet(c(	"first_binding_site"="ATCTTCAGC", 
+#            				          	"target_site"="CATAAAA", 
+#            				          	"second_binding_site"="GATGAGGTT", 
+#            				          	"primer1"="GCGCAGGAATTTCAAAAACACTA", 
+#                      					"primer2"="ACATTTGCCTGAATGGAGGAGT", 
+#                      					"upstream_site"="AAGTGGGTGGA"))	
 #search.terms.dict <- PDict(search.terms)
 
 bp.cutoff.value <- 250
 percent.n.cutoff.value <- 32
-filename <- "nrxn1.seq"
-#filename <- "gria_sequence.seq"
+#filename <- "nrxn1.seq"
+filename <- "gria_sequence.seq"
 #filename <- "epas1b.seq"
 table.length <- NA
 
@@ -131,7 +131,7 @@ find.sequence.basic.stats <- function(DNA.set){
                        "percent_ns"=n.percent.vector)
   return(stats.table)
 }
-findLRmatch <- function(L.search.term, R.search.term, sequences.to.be.searched, max.gap.length = 20, l.and.r.are.fixed = F ){
+findLRmatch <- function(L.search.term, R.search.term, sequences.to.be.searched, max.gap.length = 50, l.and.r.are.fixed = F ){
   matches <- list(vector(length=length(sequences.to.be.searched)))
   for(i in 1:length(sequences.to.be.searched)){
     matches[i] <- matchLRPatterns(L.search.term, 
@@ -202,6 +202,7 @@ reverse.matches <- list(vector(length=table.length))
 
 master.table$match_length <- 0
 
+#finds matches in sequences
 for(i in 1:table.length){
   if(master.table$initial_screen[i] == "OK"){
     
@@ -255,7 +256,7 @@ for(i in 1:table.length){
      reverse.matches[i] <- reverse.matches[[i]][r.best.index]
    }
    
-    
+   #label sequences as forward or reverse 
    if (length(reverse.matches[[i]]) > 0 && length(forward.matches[[i]]) > 0){
       master.table$direction[i] <- "both directions"
     }
@@ -270,46 +271,46 @@ for(i in 1:table.length){
   }
 }
 
+#labels table with how many matches for each result
+# for (i in 1:table.length){
+#   master.table$for.matches[i] <- length(forward.matches[[i]])
+#   master.table$rev.matches[i] <- length(reverse.matches[[i]])
+# }
 
-for (i in 1:table.length){
-  master.table$for.matches[i] <- length(forward.matches[[i]])
-  master.table$rev.matches[i] <- length(reverse.matches[[i]])
-}
-
-
+#if both forward and reverse result, eliminates one
 for(i in 1:table.length){
   if(length(forward.matches[[i]]) > 0 && length(reverse.matches[[i]]) > 0){   
     if(master.table$r_min_pct[i] < master.table$f_min_pct[i]){         
       master.table$direction[i] <- "reverse"            
       forward.matches[[i]] <- NA
-      master.table$for.matches[i]<-0
+      #master.table$for.matches[i]<-0
     }
     else if (master.table$f_min_pct[i] < master.table$r_min_pct[i]){    
       master.table$direction[i] <- "forward"
       reverse.matches[[i]] <- NA
-      master.table$rev.matches[i]<- 0
+      #master.table$rev.matches[i]<- 0
     }
     else if (master.table$f_min_pct[i] == master.table$r_min_pct[i]) {         
       master.table$direction[i] <- "probably not it"
       reverse.matches[[i]] <- NA
       forward.matches[[i]] <- NA
-      master.table$rev.matches[i]<-0
-      master.table$for.matches[i]<-0
+     # master.table$rev.matches[i]<-0
+      #master.table$for.matches[i]<-0
     }
   } 
   else if( length(forward.matches[[i]]) > 0 && is.na(length(reverse.matches[[i]])) == TRUE){
     master.table$direction[i] <- "forward"
     reverse.matches[[i]] <- NA
-    master.table$rev.matches[i]<-0
+    #master.table$rev.matches[i]<-0
   }
   else if (length(reverse.matches[[i]]) > 0 && is.na(length(forward.matches[[i]])) == TRUE){
     master.table$direction[i] <- "reverse"
     forward.matches[[i]] <- NA
-    master.table$for.matches[i]<-0
+    #master.table$for.matches[i]<-0
   }
 }
 
-
+#puts lenth of match in table
 for(i in 1:table.length){
   if(master.table$direction[i] == "forward"){
     master.table$match_length[i] <- width(forward.matches[[i]])
@@ -320,66 +321,6 @@ for(i in 1:table.length){
 }
 
 
-# 
-# for (i in 1:table.length){
-#   
-#   if(length(forward.matches[[i]]) > 0 && length(reverse.matches[[i]]) > 0){
-# 
-#     f.num.matches <- length(forward.matches[[i]])
-#     r.num.matches <- length(reverse.matches[[i]])
-#     
-#     f.current <- forward.matches[[i]]
-#     r.current <- reverse.matches[[i]]
-#     
-#     f.min.pct <- 101
-#     r.min.pct <- 101
-#     f.best.index <- NA
-#     r.best.index <- NA
-#     
-#     for (j in 1:f.num.matches){
-#       #find percentage of Ns in each.
-#       current.width <- width(f.current[j])
-#       current.Ns <- countPattern("N", f.current[j])
-#       pct.ns <- (current.Ns/current.width)*100
-#       if(pct.ns < f.min.pct) {
-#         f.best.index <- j
-#         f.min.pct <- pct.ns
-#       }
-#     }
-#      for (k in 1:r.num.matches){
-#        #find percentage of Ns in each.
-#        current.width <- width(r.current[k])
-#        current.Ns <- countPattern("N", r.current[k])
-#        pct.ns <- (current.Ns/current.width)*100
-#       if(pct.ns < r.min.pct) {
-#         r.best.index <- k
-#         r.min.pct <- pct.ns
-#       }
-#      }
-    
-#     if (f.min.pct < r.min.pct){
-#       master.table$direction[i] <- "forward"
-#       forward.matches[[i]] <- forward.matches[[i]][f.best.index]
-#       reverse.matches[[i]] <- NA
-#     }
-#     else if (r.min.pct < f.min.pct){
-#       master.table$direction[i] <- "reverse"
-#       reverse.matches[[i]] <- reverse.matches[[i]][r.best.index]
-#       forward.matches[[i]] <- NA
-#     }
-#  }
-#}
-
-# master.table$match_length <- 0
-# 
-# for(i in 1:table.length){
-#   if(master.table$direction[i] == "forward"){
-#     master.table$match_length[i] <- width(forward.matches[[i]])
-#   }
-#   else if (master.table$direction[i] == "reverse"){
-#     master.table$match_length[i] <- width(reverse.matches[[i]])
-#   }
-# }
 
 # ############# Gets reverse complement of reversed sequences ##################
 # #sequences.to.reverse <- master.table[master.table$reversed,]
