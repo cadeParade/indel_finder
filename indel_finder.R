@@ -180,9 +180,9 @@ for(i in 1:table.length){
 
 ############## Perform matchLRPattern ########################################
 
-results <- list(vector(length=table.length))
-master.table$direction <- NA
-master.table$results <- NA
+#results <- list(vector(length=table.length))
+master.table$direction <- "omitted"
+#master.table$results <- NA
 
 forward.matches <- list(vector(length=table.length))
 reverse.matches <- list(vector(length=table.length))
@@ -224,19 +224,12 @@ for (i in 1:table.length){
 for (i in 1:table.length){
   
   if(length(forward.matches[[i]]) > 0 && length(reverse.matches[[i]]) > 0){
-#     things we will need to remember:
-#       lowest forward score
-#       index of lowest forward score
-#       lowest reverse score
-#       index of lowest reverse score
-    
-    #f.and.r.matches <- c(forward.matches[i], reverse.matches[i])
+
     f.num.matches <- length(forward.matches[[i]])
     r.num.matches <- length(reverse.matches[[i]])
     
     f.current <- forward.matches[[i]]
     r.current <- reverse.matches[[i]]
-    
     
     f.min.pct <- 101
     r.min.pct <- 101
@@ -274,127 +267,19 @@ for (i in 1:table.length){
       reverse.matches[[i]] <- reverse.matches[[i]][r.best.index]
       forward.matches[[i]] <- NA
     }
-
-#     print(paste("f.min.match", f.min.match, master.table$well_no[i]))
-#     print(paste("r.min.match", r.min.match, master.table$well_no[i]))
-#     print(paste("f.best.index", f.best.index, master.table$well_no[i]))
-#     print(paste("r.best.index", r.best.index, master.table$well_no[i]))
-      
-#     loop over forward {
-#       score this one
-#       if it is the lowest, remember both the score and index
-#     }
-#     
-#     loop over reverse {
-#       score this one
-#       if it is the lowest, remember both the score and index
-#     }
-#     
-#     if the lowest forward is better than the lowest reverse {
-#       forward wins
-#       return the forward score and the forward index and the fact that it was 'forward'
-#     } else {
-#       reverse wins
-#       return the reverse score and the reverse index and the fact that it was 'reverse'
-#     }
-#     
   }
 }
 
-#old old old
+master.table$match_length <- 0
+
 for(i in 1:table.length){
-  #If the basic character stats are "OK" then check for 1st and 2nd binding sites
-  if(master.table$initial_screen[i] == "OK"){
-    results[i] <- matchLRPatterns(all.search.terms$first_binding_site_rev, 
-                                  all.search.terms$second_binding_site_rev, 
-                                  20, 
-                                  DNA.sequences.trimmed[[i]], 
-                                  Lfixed=F, 
-                                  Rfixed=F)  
-    #master.table$direction[i] <- "forward"
-    
-    
-    
-    #If there are any matches for the first and second binding sites, 
-    #find out how many matches there are and their match "quality"
-    #i.e. what percentage of the match is "N"s
-    if (length(width(results[[i]])) > 0) {
-      
-      current <- results[[i]]
-      min.match <- 101
-      best.result <- NA
-      
-      #for each match in each well, if the percent of N's in match is less than
-      #previous then make the final result that
-      
-#     pct.ns <- function(candidate) {
-#       ...
-#     }
-#     
-#     reverse.complement <- function(dna.string) {
-#       ...
-#     }
-#          
-      
-
-  
-      
-min.by <- function(collection, fn){
-  comparators <- sapply(collection, fn)
-  least <- min(comparators)
-  
-}
-      
-      
-#     min.by <- function(collection, fn) {
-#       comparators <- sapply(collection, fn)
-#       least = min(comparators)
-#       offset = index.of(least, comparators)  # what is the position of 3 inside c(2, 3, 4, 5) # it is 2
-#       collection[offset]
-#     }
-#     
-#     min.forward <- min.by(current, pct.ns);
-#     min.reverse <- min.by(reverse.complement(current), pct.ns)      
-#     best.match <- min(c(min.forward, min.reverse));      
-#     results[i] <- best.match
-      
-
-      
-      if (length(current) > 1) {
-        
-
-        for(j in 1:length(current)){
-          
-          # try each forward
-          num.bases <- width(current[j])
-          num.ns.match <- countPattern("N", current[j])
-          pct.ns.match <- (num.ns.match/num.bases)*100
-          if(pct.ns.match < min.match) {
-            min.match <- pct.ns.match
-            best.result <- current[j]
-          }
-          
-#           # try each reverse complement
-#           reverse.complement <- ...(current[j])
-#           rev.num.bases <- ...
-#           rev.num.ns.match <- ...
-#           rev.pct.ns.match <- ...
-#           if(rev.pct.ns.match < min.match) {
-#             min.match <- pct.ns.match
-#             best.result <- current[j]
-#           }
-        }  
-        
-        # keep the best
-        results[i] <- best.result
-      }    
-      
-      master.table$results[i] <- width(results[[i]])
-    }
+  if(master.table$direction[i] == "forward"){
+    master.table$match_length[i] <- width(forward.matches[[i]])
+  }
+  else if (master.table$direction[i] == "reverse"){
+    master.table$match_length[i] <- width(reverse.matches[[i]])
   }
 }
-
-
 
 # ############# Gets reverse complement of reversed sequences ##################
 # #sequences.to.reverse <- master.table[master.table$reversed,]
