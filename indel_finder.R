@@ -28,13 +28,56 @@ search.terms <- DNAStringSet(c(	"first_binding_site"="ATCTTCAGC",
 #search.terms.dict <- PDict(search.terms)
 
 bp.cutoff.value <- 250
-percent.n.cutoff.value <- 50
+percent.n.cutoff.value <- 32
 filename <- "nrxn1.seq"
 table.length <- NA
-input.search.terms<- function(){}
-read.file <- function(){}
-############## Find reverse complement of search terms #######################
 
+
+############## FUNCTION DEFINITIONS ##########################################
+
+
+input.search.terms<- function(){}
+read.fasta.file <- function(filename){
+  #reads in file
+  sequences <- read.fasta(filename, 
+                          seqtype = "DNA", 
+                          as.string = TRUE, 
+                          set.attributes = FALSE, 
+                          forceDNAtolower = FALSE)
+}
+parse.sequence.name.and.divide.into.table <- function(raw.sequence.file){
+  
+  #declares vectors for loop below
+  plate.row<-vector(mode="character")
+  plate.column<- vector(mode="numeric")
+  well.number<-vector(mode="character")
+  sequence.column <- vector(mode="character")
+  
+  # puts well number and sequence in different columns
+  # splices well number
+  for(i in seq_along(raw.sequence.file)){
+    current<-names(raw.sequence.file[i])
+    split.well.number <- regmatches(current[1],	regexec("([A-H])(\\d\\d)",current[1]))
+    split.well.number<-unlist(split.well.number)
+    
+    well.number[i]<-split.well.number[1]
+    plate.row[i]<- split.well.number[2]
+    plate.column[i]<-split.well.number[3]
+    
+    sequence.column[i] <- as.character(raw.sequence.file[i])                              
+  }
+  
+  sequence.table <- as.data.frame(cbind("well_no"=well.number, 
+                                        "plate_row"=plate.row, 
+                                        "plate_column"=plate.column,
+                                        "sequence"=sequence.column), 
+                                  stringsAsFactors= FALSE)
+  
+  #trims sequence string to remove some leading and trailing Ns
+  sequence.table$trimmed_sequences <- substring(sequence.table$sequence,25, 
+                                                nchar(sequence.table$sequence)-50)
+  return(sequence.table)
+}
 find.reverse.complement.DNAStringSet <- function(set.to.reverse){
   #finds reverse complement of search terms
   rev.comp <- DNAStringSet()
@@ -48,92 +91,78 @@ find.reverse.complement.DNAStringSet <- function(set.to.reverse){
   forward.and.reverse.set <- c(set.to.reverse, rev.comp)
   return(forward.and.reverse.set)
 }
+find.pct.ns <- function(DNAString.object){
+  if(length(DNAString.object) > 1){
+    pct.n.vector <- vector(length=length(DNAString.object))
+    for(i in 1:length(DNAString.object)){
+      total.bps <- width(DNAString.object[i])
+      num.ns <- vcountPattern("N", DNAString.object[i])
+      pct.ns <- (num.ns/total.bps) * 100
+      pct.n.vector[i] <- pct.ns
+    }
+    return(pct.n.vector)
+  }  
+  else {
+    total.bps <- width(DNAString.object)
+    num.ns <- vcountPattern("N", DNAString.object)
+    pct.ns <- (num.ns/total.bps) * 100
+    pct.n <- pct.ns
+    return(pct.n)
+  }
+}
+find.sequence.basic.stats <- function(DNA.set){
+  
+  n.percent.vector <- find.pct.ns(DNA.set)
+  sequence.length.vector <- width(DNA.set)
+  num.ns.vector <- vcountPattern("N", DNA.set)
+  stats.table <- cbind("well_no"=sequence.table$well_no, 
+                       "total_bps"=sequence.length.vector, 
+                       "num_Ns"=num.ns.vector, 
+                       "percent_ns"=n.percent.vector)
+  return(stats.table)
+}
+findLRmatch <- function(L.search.term, R.search.term, sequences.to.be.searched, max.gap.length = 20, l.and.r.are.fixed = F ){
+  matches <- list(vector(length=length(sequences.to.be.searched)))
+  for(i in 1:length(sequences.to.be.searched)){
+    matches[i] <- matchLRPatterns(L.search.term, 
+                                  R.search.term,
+                                  max.gap.length, 
+                                  sequences.to.be.searched[[i]], 
+                                  Lfixed=l.and.r.are.fixed, 
+                                  Rfixed=l.and.r.are.fixed)  
+  }
+  return(matches)
+} 
+convert.to.numeric <- function(vector){
+  converted <- as.numeric(as.character(vector))
+  return(converted)
+}
+
+############## THINGS ARE HAPPENING
 
 all.search.terms <- find.reverse.complement.DNAStringSet(search.terms)
 
-
-############## Divides raw text into table ################################
-read.fasta.file <- function(filename){
-  #reads in file
-  sequences <- read.fasta(filename, 
-                          seqtype = "DNA", 
-                          as.string = TRUE, 
-                          set.attributes = FALSE, 
-                          forceDNAtolower = FALSE)
-}
-
 raw.sequence.file <- read.fasta.file(filename)
-
-parse.sequence.name.and.divide.into.table <- function(raw.sequence.file){
-
-  #declares vectors for loop below
-  plate.row<-vector(mode="character")
-  plate.column<- vector(mode="numeric")
-  well.number<-vector(mode="character")
-  sequence.column <- vector(mode="character")
-  
-  # puts well number and sequence in different columns
-  # splices well number
-  for(i in seq_along(raw.sequence.file)){
-  	current<-names(raw.sequence.file[i])
-  	split.well.number <- regmatches(current[1],	regexec("([A-H])(\\d\\d)",current[1]))
-  	split.well.number<-unlist(split.well.number)
-  	
-  	well.number[i]<-split.well.number[1]
-  	plate.row[i]<- split.well.number[2]
-  	plate.column[i]<-split.well.number[3]
-  	
-  	sequence.column[i] <- as.character(raw.sequence.file[i])                              
-  }
-  
-  sequence.table <- as.data.frame(cbind("well_no"=well.number, 
-  						                          "plate_row"=plate.row, 
-                                        "plate_column"=plate.column,
-  						                          "sequence"=sequence.column), 
-                                    stringsAsFactors= FALSE)
-  
-  #trims sequence string to remove some leading and trailing Ns
-  sequence.table$trimmed_sequences <- substring(sequence.table$sequence,25, 
-                                                nchar(sequence.table$sequence)-50)
-  return(sequence.table)
-}
 
 sequence.table <- parse.sequence.name.and.divide.into.table(raw.sequence.file)
 
-#defines length variable to be used in loops
 table.length <- nrow(sequence.table)
 
-############## Find percentage of N's in each sequence ###########
 #converts sequence column into set of DNAString class
 DNA.sequences<- DNAStringSet(sequence.table$sequence)
 DNA.sequences.trimmed <- DNAStringSet(sequence.table$trimmed_sequences)
-
-find.sequence.basic.stats <- function(DNA.set){
-
-  sequence.length.vector <- width(DNA.set)
-  num.ns.vector <- vcountPattern("N", DNA.set)
-  
-  n.percent.vector <- format((num.ns.vector/sequence.length.vector)*100, digits=2)
-  stats.table <- cbind("well_no"=sequence.table$well_no, 
-                   "total_bps"=sequence.length.vector, 
-                   "num_Ns"=num.ns.vector, 
-                   "percent_ns"=n.percent.vector)
-  return(stats.table)
-}
 
 n.table <- find.sequence.basic.stats(DNA.sequences)
 
 ############## Create  big table to store stats ####################
 master.table <- merge(sequence.table, n.table, by="well_no")
-#master.table$sequence <- as.character(master.table$sequence)
 
-master.table$total_bps <-as.numeric(as.character(master.table$total_bps))
-master.table$num_Ns <-as.numeric(as.character(master.table$num_Ns))
-master.table$percent_ns <-as.numeric(as.character(master.table$percent_ns))
+master.table$total_bps <-convert.to.numeric(master.table$total_bps)
+master.table$num_Ns <-convert.to.numeric(master.table$num_Ns)
+master.table$percent_ns <-convert.to.numeric(master.table$percent_ns)
 
 ############## Screens sequence char stats ####################################
 master.table$initial_screen <- "OK"
-
 #annotates master.table
 for(i in 1:table.length){
   if (master.table$total_bps[i] < bp.cutoff.value && 
@@ -146,42 +175,141 @@ for(i in 1:table.length){
    } 
 }
 
-
- 
-
 ############## Perform matchLRPattern ########################################
 
 results <- list(vector(length=table.length))
-master.table$sequence_is_reverse <- NA
-master.table$LRmatch_length <- 0
+master.table$direction <- NA
+master.table$results <- NA
+master.table$for.matches <- NA
+master.table$rev.matches <- NA
+
+forward.matches <- list(vector(length=table.length))
+reverse.matches <- list(vector(length=table.length))
+
 
 for(i in 1:table.length){
   if(master.table$initial_screen[i] == "OK"){
-    results[i] <- matchLRPatterns(all.search.terms$first_binding_site, 
-                                  all.search.terms$second_binding_site, 
+    reverse.matches[i] <- findLRmatch(all.search.terms$second_binding_site_rev,
+                                   all.search.terms$first_binding_site_rev,
+                                   DNA.sequences.trimmed[i])
+    
+    forward.matches[i] <- findLRmatch(all.search.terms$first_binding_site,
+                                   all.search.terms$second_binding_site,
+                                   DNA.sequences.trimmed[i])
+    
+ 
+   if (length(reverse.matches[[i]]) > 0 && length(forward.matches[[i]]) >0){
+      master.table$direction[i] <- "both directions"
+    }
+    else if(length(reverse.matches[[i]]) > 0){
+      master.table$direction[i] <- "reverse"
+    }
+    else if (length(forward.matches[[i]]) > 0){
+      master.table$direction[i] <- "forward"
+    }
+    else { master.table$direction[i] <- "not found"
+    }
+  }
+ 
+}
+
+
+for (i in 1:table.length){
+  master.table$for.matches[i] <- length(forward.matches[[i]])
+  master.table$rev.matches[i] <- length(reverse.matches[[i]])
+}
+
+#old old old
+for(i in 1:table.length){
+  #If the basic character stats are "OK" then check for 1st and 2nd binding sites
+  if(master.table$initial_screen[i] == "OK"){
+    results[i] <- matchLRPatterns(all.search.terms$first_binding_site_rev, 
+                                  all.search.terms$second_binding_site_rev, 
                                   20, 
                                   DNA.sequences.trimmed[[i]], 
                                   Lfixed=F, 
                                   Rfixed=F)  
-    if ( length(width(results[[i]])) > 0){
-     master.table$sequence_is_reverse[i] <- "forward"
-     #master.table$LRmatch_length[i] <- width(results[[i]])
-     print(width(results[[i]]))
+    #master.table$direction[i] <- "forward"
+    
+    
+    
+    #If there are any matches for the first and second binding sites, 
+    #find out how many matches there are and their match "quality"
+    #i.e. what percentage of the match is "N"s
+    if (length(width(results[[i]])) > 0) {
+      
+      current <- results[[i]]
+      min.match <- 101
+      best.result <- NA
+      
+      #for each match in each well, if the percent of N's in match is less than
+      #previous then make the final result that
+      
+#     pct.ns <- function(candidate) {
+#       ...
+#     }
+#     
+#     reverse.complement <- function(dna.string) {
+#       ...
+#     }
+#          
+      
+
+  
+      
+min.by <- function(collection, fn){
+  comparators <- sapply(collection, fn)
+  least <- min(comparators)
+  
+}
+      
+      
+#     min.by <- function(collection, fn) {
+#       comparators <- sapply(collection, fn)
+#       least = min(comparators)
+#       offset = index.of(least, comparators)  # what is the position of 3 inside c(2, 3, 4, 5) # it is 2
+#       collection[offset]
+#     }
+#     
+#     min.forward <- min.by(current, pct.ns);
+#     min.reverse <- min.by(reverse.complement(current), pct.ns)      
+#     best.match <- min(c(min.forward, min.reverse));      
+#     results[i] <- best.match
+      
+
+      
+      if (length(current) > 1) {
+        
+
+        for(j in 1:length(current)){
+          
+          # try each forward
+          num.bases <- width(current[j])
+          num.ns.match <- countPattern("N", current[j])
+          pct.ns.match <- (num.ns.match/num.bases)*100
+          if(pct.ns.match < min.match) {
+            min.match <- pct.ns.match
+            best.result <- current[j]
+          }
+          
+#           # try each reverse complement
+#           reverse.complement <- ...(current[j])
+#           rev.num.bases <- ...
+#           rev.num.ns.match <- ...
+#           rev.pct.ns.match <- ...
+#           if(rev.pct.ns.match < min.match) {
+#             min.match <- pct.ns.match
+#             best.result <- current[j]
+#           }
+        }  
+        
+        # keep the best
+        results[i] <- best.result
+      }    
+      
+      master.table$results[i] <- width(results[[i]])
     }
-   else { 
-     results[i] <- matchLRPatterns(all.search.terms$second_binding_site_rev, 
-                                   all.search.terms$first_binding_site_rev, 
-                                   20, 
-                                   DNA.sequences.trimmed[[i]], 
-                                   Lfixed=F, 
-                                   Rfixed=F)
-     
-      if (length(width(results[[i]])) == 1){
-         master.table$sequence_is_reverse[i] <- "reverse"
-         master.table$LRmatch_length[i] <- width(results[[i]])
-      }
-    }
-  } 
+  }
 }
 
 
@@ -216,8 +344,8 @@ for(i in 1:table.length){
 # 
 # ############## Write to files #################################################
 # 
- write.table(master.table, file = "summary.all.csv", sep = ",", col.names = NA,
-                          qmethod = "double")
+write.table(master.table, file = "summary.all.csv", sep = ",", col.names = NA,
+                        qmethod = "double")
 # 
 # #align.table <- as.data.frame(matrix(NA, nrow=nrow(working.table), ncol=2) )
 # 
@@ -236,3 +364,6 @@ for(i in 1:table.length){
 #   writeLines(c(paste(">", working.table$well_no[i]), working.table$sequences_to_align[i]), FASTA)    
 # }
 # close(FASTA)
+
+
+
