@@ -105,7 +105,7 @@ find.pct.ns <- function(DNAString.object){
       total.bps <- width(DNAString.object[i])
       num.ns <- vcountPattern("N", DNAString.object[i])
       pct.ns <- (num.ns/total.bps) * 100
-      pct.n.vector[i] <- pct.ns
+      pct.n.vector[i] <- signif(pct.ns, digits=3)
     }
     return(pct.n.vector)
   }  
@@ -113,7 +113,7 @@ find.pct.ns <- function(DNAString.object){
     total.bps <- width(DNAString.object)
     num.ns <- vcountPattern("N", DNAString.object)
     pct.ns <- (num.ns/total.bps) * 100
-    pct.n <- pct.ns
+    pct.n <- signif(pct.ns, digits = 3)
     return(pct.n)
   }
 }
@@ -191,8 +191,8 @@ for(i in 1:table.length){
 
 #results <- list(vector(length=table.length))
 master.table$direction <- "omitted"
-master.table$r_min_pct <- NA
-master.table$f_min_pct <- NA
+r_min_pct <- vector(length=table.length)
+f_min_pct <- vector(length=table.length)
 
 forward.matches <- list(vector(length=table.length))
 reverse.matches <- list(vector(length=table.length))
@@ -230,7 +230,7 @@ for(i in 1:table.length){
         }
       }
     
-      master.table$f_min_pct[i] <- f.min.pct
+      f_min_pct[i] <- f.min.pct
       forward.matches[i] <- forward.matches[[i]][f.best.index] 
     }
     if(length(reverse.matches[[i]]) > 0){
@@ -249,7 +249,7 @@ for(i in 1:table.length){
                  r.min.pct <- pct.ns
                }
            }
-     master.table$r_min_pct[i] <- r.min.pct
+     r_min_pct[i] <- r.min.pct
      reverse.matches[i] <- reverse.matches[[i]][r.best.index]
    }
    
@@ -277,17 +277,17 @@ for(i in 1:table.length){
 #if both forward and reverse result, eliminates one
 for(i in 1:table.length){
   if(length(forward.matches[[i]]) > 0 && length(reverse.matches[[i]]) > 0){   
-    if(master.table$r_min_pct[i] < master.table$f_min_pct[i]){         
+    if(r_min_pct[i] < f_min_pct[i]){         
       master.table$direction[i] <- "reverse"            
       forward.matches[[i]] <- NA
       #master.table$for.matches[i]<-0
     }
-    else if (master.table$f_min_pct[i] < master.table$r_min_pct[i]){    
+    else if (f_min_pct[i] < r_min_pct[i]){    
       master.table$direction[i] <- "forward"
       reverse.matches[[i]] <- NA
       #master.table$rev.matches[i]<- 0
     }
-    else if (master.table$f_min_pct[i] == master.table$r_min_pct[i]) {         
+    else if (f_min_pct[i] == r_min_pct[i]) {         
       master.table$direction[i] <- "probably not it"
       reverse.matches[[i]] <- NA
       forward.matches[[i]] <- NA
