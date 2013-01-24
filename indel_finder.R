@@ -131,7 +131,7 @@ find.sequence.basic.stats <- function(DNA.set){
                        "percent_ns"=n.percent.vector)
   return(stats.table)
 }
-findLRmatch <- function(L.search.term, R.search.term, sequences.to.be.searched, max.gap.length = 50, l.and.r.are.fixed = F ){
+findLRmatch <- function(L.search.term, R.search.term, sequences.to.be.searched, max.gap.length = 20, l.and.r.are.fixed = F ){
   matches <- list(vector(length=length(sequences.to.be.searched)))
   for(i in 1:length(sequences.to.be.searched)){
     matches[i] <- matchLRPatterns(L.search.term, 
@@ -196,11 +196,11 @@ for(i in 1:table.length){
 master.table$direction <- "omitted"
 master.table$r_min_pct <- NA
 master.table$f_min_pct <- NA
-master.table$match_length <- 0
 
 forward.matches <- list(vector(length=table.length))
 reverse.matches <- list(vector(length=table.length))
 
+master.table$match_length <- 0
 
 for(i in 1:table.length){
   if(master.table$initial_screen[i] == "OK"){
@@ -231,8 +231,9 @@ for(i in 1:table.length){
           f.min.pct <- pct.ns
         }
       }
-      master.table$f_min_pct[i] <- r.min.pct
-      forward.matches[i] <- forward.matches[[i]][j]  
+    
+      master.table$f_min_pct[i] <- f.min.pct
+      forward.matches[i] <- forward.matches[[i]][f.best.index] 
     }
     if(length(reverse.matches[[i]]) > 0){
       
@@ -251,7 +252,7 @@ for(i in 1:table.length){
                }
            }
      master.table$r_min_pct[i] <- r.min.pct
-     reverse.matches[i] <- reverse.matches[[i]][j]
+     reverse.matches[i] <- reverse.matches[[i]][r.best.index]
    }
    
     
@@ -277,17 +278,34 @@ for (i in 1:table.length){
 
 
 for(i in 1:table.length){
-  if(length(forward.matches[[i]]) > 0 && length(reverse.matches[[i]]) > 0){
-    if(master.table$r_min_pct[i] > master.table$f_min_pct[i]){
-      master.table$direction[i] <- "reverse"
+  if(length(forward.matches[[i]]) > 0 && length(reverse.matches[[i]]) > 0){   
+    if(master.table$r_min_pct[i] < master.table$f_min_pct[i]){         
+      master.table$direction[i] <- "reverse"            
       forward.matches[[i]] <- NA
       master.table$for.matches[i]<-0
     }
-    else if (master.table$f_min_pct[i] > master.table$r_min_pct[i]){
+    else if (master.table$f_min_pct[i] < master.table$r_min_pct[i]){    
       master.table$direction[i] <- "forward"
       reverse.matches[[i]] <- NA
       master.table$rev.matches[i]<- 0
     }
+    else if (master.table$f_min_pct[i] == master.table$r_min_pct[i]) {         
+      master.table$direction[i] <- "probably not it"
+      reverse.matches[[i]] <- NA
+      forward.matches[[i]] <- NA
+      master.table$rev.matches[i]<-0
+      master.table$for.matches[i]<-0
+    }
+  } 
+  else if( length(forward.matches[[i]]) > 0 && is.na(length(reverse.matches[[i]])) == TRUE){
+    master.table$direction[i] <- "forward"
+    reverse.matches[[i]] <- NA
+    master.table$rev.matches[i]<-0
+  }
+  else if (length(reverse.matches[[i]]) > 0 && is.na(length(forward.matches[[i]])) == TRUE){
+    master.table$direction[i] <- "reverse"
+    forward.matches[[i]] <- NA
+    master.table$for.matches[i]<-0
   }
 }
 
@@ -300,15 +318,6 @@ for(i in 1:table.length){
     master.table$match_length[i] <- width(reverse.matches[[i]])
   }
 }
-
-# for(i in 1:table.length){
-#   if (master.table$direction == "forward"){
-#     master.table$match_length[i] <- width(forward.matches[[i]])
-#   }
-#   else if( master.table$direction == "reverse"){
-#     master.table$match_length[i] <- width(reverse.matches[[i]])  
-#   }
-# }
 
 
 # 
