@@ -9,13 +9,16 @@ We can then find how many bases are between the matched pairs in order to see if
 
 I will explain the full process the program goes through so you can trust it as far as you wish. 
 
-The raw sequence data is read from a FASTA formatted text file. 
-The sequences are put into a column of their own. The beginning 25 bases and the ending 50 bases are trimmed from each sequence because they are almost always full of Ns. Without these deleted, the matches become overwhelming.
-Each sequence is has some initial characteristics recorded -- the total number of bases and the percentage of N's each sequence has. 
-Sequences are omitted from analysis at this stage if they have too few bases or too high percentage of N's. The threshold for these cutoff values can be changed to alter the analysis parameters. 
-The matchLRPatterns function is run on each sequence with both forward and reverse binding site sequences. The matchLRPattern function has several parameters you can alter to make it more or less specific. It has been set to allow matching with "N"s as sometimes the sequence is messy but still readable as a match. It has also been set to allow up to two mismatches in both the left and right binding site. This is to account for polymorphisms that sometimes happen there. 
-The matches are recorded separately for forward and reverse and since there are often still N's at the beginning and ends of the sequences, there are often many matches. To find the best one, the match with the least percent N's in each set of matches is kept while the rest are discarded. 
-Then, for each well, the percent N's of the forward match and reverse match (if there are both) are compared and the lowest wins. If there are no matches in either direction, the sequence is labeled as "not found".
-Each well is then labeled as forward or reverse, based on which direction binding site the best match came from. 
-The match length column is the most important. This tells how long the segment including the left binding site, target site (altered or not), and right binding site is. If the length is different than the expected length calculated by adding the length of the two binding sites and the target site, then there is a good chance of an index in the target site. 
+1. The raw sequence data is read from a FASTA formatted text file. 
+2. The sequences are put into a column of their own. The beginning 25 bases and the ending 50 bases are trimmed from each sequence because they are almost always full of Ns. Without these deleted, the matches become overwhelming.
+3. Each sequence is has some initial characteristics recorded -- the total number of bases and the percentage of N's each sequence has. 
+4. Sequences are omitted from analysis at this stage if they have too few bases or too high percentage of N's. The threshold for these cutoff values can be changed to alter the analysis parameters. 
+5. The matchLRPatterns function is run on each sequence with both forward and reverse binding site sequences. The matchLRPattern function has several parameters you can alter to make it more or less specific. It has been set to allow matching with "N"s as sometimes the sequence is messy but still readable as a match. It has also been set to allow up to two mismatches in both the left and right binding site. This is to account for polymorphisms that sometimes happen there. 
+6. The matches are recorded separately for forward and reverse and since there are often still N's at the beginning and ends of the sequences, there are often many matches. To find the best one, the match with the least percent N's in each set of matches is kept while the rest are discarded. 
+7. Then, for each well, the percent N's of the forward match and reverse match (if there are both) are compared and the lowest wins. If there are no matches in either direction, the sequence is labeled as "not found".
+8. Each well is then labeled as forward or reverse, based on which direction binding site the best match came from. 
+9. The match length column is the most important. This tells how long the segment including the left binding site, target site (altered or not), and right binding site is. If the length is different than the expected length calculated by adding the length of the two binding sites and the target site, then there is a good chance of an index in the target site. 
+ 
 The method is not perfect yet and so there may be some false positives. This method also will not recognize point mutations in the target site. 
+
+The program creates a csv file with a table listing all of the results listed above. 
