@@ -2,9 +2,6 @@
 ## find out whether a certain set of flanking sequences is present,
 ## how many bases are in between them, and what the sequence is.
 
-## There are no functions yet because without functions I can access the 
-## variables in the console and play with them. At the end there will be 
-## functions!
 
 ############## SETUP ################################
 library("seqinr")
