@@ -138,7 +138,7 @@ convert.to.numeric <- function(vector){
   return(converted)
 }
 
-############## THINGS ARE HAPPENING
+############## THINGS ARE HAPPENING ####################
 
 all.search.terms <- find.reverse.complement.DNAStringSet(search.terms)
 
@@ -150,8 +150,9 @@ table.length <- nrow(sequence.table)
 
 #converts sequence column into set of DNAString class
 DNA.sequences<- DNAStringSet(sequence.table$sequence)
+names(DNA.sequences) <- sequence.table$well_no
 DNA.sequences.trimmed <- DNAStringSet(sequence.table$trimmed_sequences)
-
+names(DNA.sequences.trimmed) <- names(DNA.sequences)
 n.table <- find.sequence.basic.stats(DNA.sequences)
 
 ############## Create  big table to store stats ####################
@@ -168,9 +169,11 @@ for(i in 1:table.length){
   if (master.table$total_bps[i] < bp.cutoff.value && 
       master.table$percent_ns[i] > percent.n.cutoff.value){
         master.table$initial_screen[i] <- "Omitted: Too many N's + low bp count"
-   } else if (master.table$total_bps[i] < bp.cutoff.value){
+   } 
+  else if (master.table$total_bps[i] < bp.cutoff.value){
       master.table$initial_screen[i] <- "Omitted: Low bp count"
-   } else if( master.table$percent_ns[i] > percent.n.cutoff.value){
+   } 
+  else if( master.table$percent_ns[i] > percent.n.cutoff.value){
       master.table$initial_screen[i] <- "Omitted: Too many 'N's "
    } 
 }
@@ -180,8 +183,6 @@ for(i in 1:table.length){
 results <- list(vector(length=table.length))
 master.table$direction <- NA
 master.table$results <- NA
-master.table$for.matches <- NA
-master.table$rev.matches <- NA
 
 forward.matches <- list(vector(length=table.length))
 reverse.matches <- list(vector(length=table.length))
@@ -189,6 +190,7 @@ reverse.matches <- list(vector(length=table.length))
 
 for(i in 1:table.length){
   if(master.table$initial_screen[i] == "OK"){
+    
     reverse.matches[i] <- findLRmatch(all.search.terms$second_binding_site_rev,
                                    all.search.terms$first_binding_site_rev,
                                    DNA.sequences.trimmed[i])
@@ -210,13 +212,93 @@ for(i in 1:table.length){
     else { master.table$direction[i] <- "not found"
     }
   }
- 
 }
 
 
 for (i in 1:table.length){
   master.table$for.matches[i] <- length(forward.matches[[i]])
   master.table$rev.matches[i] <- length(reverse.matches[[i]])
+}
+
+
+for (i in 1:table.length){
+  
+  if(length(forward.matches[[i]]) > 0 && length(reverse.matches[[i]]) > 0){
+#     things we will need to remember:
+#       lowest forward score
+#       index of lowest forward score
+#       lowest reverse score
+#       index of lowest reverse score
+    
+    #f.and.r.matches <- c(forward.matches[i], reverse.matches[i])
+    f.num.matches <- length(forward.matches[[i]])
+    r.num.matches <- length(reverse.matches[[i]])
+    
+    f.current <- forward.matches[[i]]
+    r.current <- reverse.matches[[i]]
+    
+    
+    f.min.pct <- 101
+    r.min.pct <- 101
+    f.best.index <- NA
+    r.best.index <- NA
+    
+    for (j in 1:f.num.matches){
+      #find percentage of Ns in each.
+      current.width <- width(f.current[j])
+      current.Ns <- countPattern("N", f.current[j])
+      pct.ns <- (current.Ns/current.width)*100
+      if(pct.ns < f.min.pct) {
+        f.best.index <- j
+        f.min.pct <- pct.ns
+      }
+    }
+     for (k in 1:r.num.matches){
+       #find percentage of Ns in each.
+       current.width <- width(r.current[k])
+       current.Ns <- countPattern("N", r.current[k])
+       pct.ns <- (current.Ns/current.width)*100
+      if(pct.ns < r.min.pct) {
+        r.best.index <- k
+        r.min.pct <- pct.ns
+      }
+     }
+    
+    if (f.min.pct < r.min.pct){
+      master.table$direction[i] <- "forward"
+      forward.matches[[i]] <- forward.matches[[i]][f.best.index]
+      reverse.matches[[i]] <- NA
+    }
+    else if (r.min.pct < f.min.pct){
+      master.table$direction[i] <- "reverse"
+      reverse.matches[[i]] <- reverse.matches[[i]][r.best.index]
+      forward.matches[[i]] <- NA
+    }
+
+#     print(paste("f.min.match", f.min.match, master.table$well_no[i]))
+#     print(paste("r.min.match", r.min.match, master.table$well_no[i]))
+#     print(paste("f.best.index", f.best.index, master.table$well_no[i]))
+#     print(paste("r.best.index", r.best.index, master.table$well_no[i]))
+      
+#     loop over forward {
+#       score this one
+#       if it is the lowest, remember both the score and index
+#     }
+#     
+#     loop over reverse {
+#       score this one
+#       if it is the lowest, remember both the score and index
+#     }
+#     
+#     if the lowest forward is better than the lowest reverse {
+#       forward wins
+#       return the forward score and the forward index and the fact that it was 'forward'
+#     } else {
+#       reverse wins
+#       return the reverse score and the reverse index and the fact that it was 'reverse'
+#     }
+#     
+  }
 }
 
 #old old old
