@@ -223,21 +223,10 @@ find.f.and.r.matches.for.each.sequence <- function(){
   matches$r.mismatch.1 <- r.mismatch.1
   matches$r.mismatch.2 <- r.mismatch.2
   
-  
-#   f.match.mismatch.0  <- vector("list", table.length)
-#   print(paste("length f.match.mismatch.0 empty)", length(f.match.mismatch.0)))
-#   f.match.mismatch.1  <- vector("list", table.length)
-#   f.match.mismatch.2  <- vector("list", table.length)
-#   
-#   r.match.mismatch.0  <- vector("list", table.length)
-#   r.match.mismatch.1  <- vector("list", table.length)
-#   r.match.mismatch.2  <- vector("list", table.length)
-  
+    
   forward.matches <- vector("list", table.length)
   reverse.matches <- vector("list", table.length)
-#  print(paste("length of forward.matches initially", length(forward.matches)))
-#  print(paste("length of reverse.matches initially", length(reverse.matches)))
-  
+ 
   
   #print(paste("matches",matches))
   for(i in 1:table.length){
@@ -253,27 +242,20 @@ find.f.and.r.matches.for.each.sequence <- function(){
                                           DNA.sequences.trimmed[i], mismatch.num, mismatch.num)
         
         if(mismatch.num == 0){
-#          print(paste("length matches[[1]] inside if 1 BEFORE", length(matches[[1]]), i))
           matches$f.mismatch.0[i] <- find.best.LR.match(forward.matches[i],i)
           matches$r.mismatch.0[i] <- find.best.LR.match(reverse.matches[i],i)
-#          print(paste("length matches[[1]] inside if 1", length(matches[[1]]), i))
         }
         else if (mismatch.num == 1){
           matches$f.mismatch.1[i] <- find.best.LR.match(forward.matches[i],i)
           matches$r.mismatch.1[i] <- find.best.LR.match(reverse.matches[i],i)  
-#          print(paste("length matches[[1]] inside if 2", length(matches[[1]]), i))
-          
         }
         else if (mismatch.num == 2){
           matches$f.mismatch.2[i] <- find.best.LR.match(forward.matches[i],i)
           matches$r.mismatch.2[i] <- find.best.LR.match(reverse.matches[i],i)
-#          print(paste("length matches[[1]] inside if 3", length(matches[[1]]), i))
-          
         } 
       }
     }
   }
-#  print(paste("length matches[[1]] at end of find.f.and.r.matches.for.each.sequence()", length(matches[[1]])))
   return(matches)
 }
 find.best.match.in.a.direction <- function(mismatch.0, mismatch.1, mismatch.2){
@@ -451,7 +433,6 @@ f.match.mismatch.2 <- matches$f.mismatch.2
 r.match.mismatch.0 <- matches$r.mismatch.0
 r.match.mismatch.1 <- matches$r.mismatch.1
 r.match.mismatch.2 <- matches$r.mismatch.2
-#print(paste("length f.mismatch.0",length(f.match.mismatch.0)))
 
 
 forward.best.matches <- find.best.match.in.a.direction(f.match.mismatch.0,
@@ -484,23 +465,7 @@ master.table$match_length <- create.vector.of.match.lengths()
 ############## makes table for FASTA ALIGNMENT
 align.table <- select.only.notable.matches()
 
-# ############## Input search terms #############################################
-# #input.search.terms <- function(){
-# 	#print(head(sequence.table))
-# 	#print("Input searchable sequences")
-# 	#print("1: sequence before first primer")
-# 	#print("2: first binding site")
-# 	#print("3: target site")
-# 	#print("4: second binding site")
-# 	#print("5: first primer")
-# 	#print("6: second primer")
-# 	#print("7: plasmid splice site")
-# 	#prompts user in console for searchable strings
-# 	#sequence.markers <-scan("",what="character", nmax=7)
-# #}
-# 	
-# 
-# ############## Write to files #################################################
+############### Write to files #################################################
 
 write.table(master.table, file = "summary.all.csv", sep = ",", col.names = NA,
                         qmethod = "double")
