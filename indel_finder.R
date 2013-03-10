@@ -5,7 +5,7 @@
 
 ############## SETUP ################################
 library("seqinr")
-library("Biostrings")
+library("Biostrings") 
 
 #epas search terms
 # search.terms <- DNAStringSet(c("first_binding_site" = "TACAATACTCCCACTGAA",
