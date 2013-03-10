@@ -7,12 +7,12 @@ library("seqinr")
 library("Biostrings")
 
 #ptpmt1.3 search terms
-search.terms <- DNAStringSet(c("first_binding_site" = "GAGTGGCAGTCTGTT",
+#search.terms <- DNAStringSet(c("first_binding_site" = "GAGTGGCAGTCTGTT",
                                "second_binding_site" = "TGGACACTGTGGACCT",
                                "target_site" = "GGCGTTGAGCAGATCAGAT"))
 
-filename <- "ptpmt1.3.txt"   
-wt.sequence <- "gccaccgttgaatgaataaataaaaaaaacaagcaaacaaacaaatgtaaatattagaaaggaataacaatattttagctttggggtttattttttttgtcttttgccctggaaatgattttaatctgtgacttatttacatgttgcacaacaaagcatttcagaattagatttttttaaaaaaaaggtaaaactacttcagattaaaatggttgaatatttctttttgttccactgtagGTGCAGCTCAGAGCGGCGTAAGGAGAAATCTCGTGATGCCGCGCGCTGCAGACGGAGTAAAGAGACAGAGGTGTTTTATGAACTGGCTCATCATCTTCCCCTTCCACACAGCATCAGCTCACATTTGGATAAAGCGTCCATCATGAGACTGGCTATCAGCTTCCTGCGGACACGCAAACTCGTCAACTCAGgtacacagtcagtatatgacaattattaattcaaaccagctttattatattgaacaagaaggtcacataaactgcaatg"
+#filename <- "ptpmt1.3.txt"   
+#wt.sequence <- "gccaccgttgaatgaataaataaaaaaaacaagcaaacaaacaaatgtaaatattagaaaggaataacaatattttagctttggggtttattttttttgtcttttgccctggaaatgattttaatctgtgacttatttacatgttgcacaacaaagcatttcagaattagatttttttaaaaaaaaggtaaaactacttcagattaaaatggttgaatatttctttttgttccactgtagGTGCAGCTCAGAGCGGCGTAAGGAGAAATCTCGTGATGCCGCGCGCTGCAGACGGAGTAAAGAGACAGAGGTGTTTTATGAACTGGCTCATCATCTTCCCCTTCCACACAGCATCAGCTCACATTTGGATAAAGCGTCCATCATGAGACTGGCTATCAGCTTCCTGCGGACACGCAAACTCGTCAACTCAGgtacacagtcagtatatgacaattattaattcaaaccagctttattatattgaacaagaaggtcacataaactgcaatg"
 
 
 # #epas search terms
@@ -31,11 +31,11 @@ wt.sequence <- "gccaccgttgaatgaataaataaaaaaaacaagcaaacaaacaaatgtaaatattagaaaggaa
 
 
 #nrxn search terms
-# search.terms <- DNAStringSet(c(	"first_binding_site"="ATCTTCAGC", 
-#            				          	  "second_binding_site"="GATGAGGTT",
-#                                 "target_site" = "CATAAAA"))
-# filename <- "nrxn1.seq"
-# wt.sequence <- "GCGCAGGAATTTCAAAAACACTACTTTAGTTGTGGACGAAGAAATCAAGTGGGTGGAGGTAAAGTCGAAACGGAGGGACATGACGGTCTTCAGCCATTTATTCTTAGGGGGGATACCTCCTGAACTGCGATCTGTAGCATTACGCCTCACATCTTCAGCCATAAAAGATGAGGTTCCCTACAAAGGATGGATAACCAACCTGAGAGTGAACGGCTCGGAGCCGGTGCTTATCGGTAGCGATGGAGTCAACAGCGACATTTGCGAAGCCGACCACATTTGCCTGAATGGAGGAGT"
+ search.terms <- DNAStringSet(c("first_binding_site"="ATCTTCAGC", 
+            				    "second_binding_site"="GATGAGGTT",
+                                "target_site" = "CATAAAA"))
+ filename <- "nrxn1.seq"
+ wt.sequence <- "GCGCAGGAATTTCAAAAACACTACTTTAGTTGTGGACGAAGAAATCAAGTGGGTGGAGGTAAAGTCGAAACGGAGGGACATGACGGTCTTCAGCCATTTATTCTTAGGGGGGATACCTCCTGAACTGCGATCTGTAGCATTACGCCTCACATCTTCAGCCATAAAAGATGAGGTTCCCTACAAAGGATGGATAACCAACCTGAGAGTGAACGGCTCGGAGCCGGTGCTTATCGGTAGCGATGGAGTCAACAGCGACATTTGCGAAGCCGACCACATTTGCCTGAATGGAGGAGT"
 
 bp.cutoff.value <- 275
 percent.n.cutoff.value <- 32
