@@ -4,19 +4,16 @@ import numpy as np
 import string
 import re
 from decimal import *
-from functools import partial
+
+#nrxn
+bind1 = "ATCTTCAGC" 
+bind2 = "GATGAGGTT"
 
 #epas
-
-wt = "cactgttgttaggagggttcagagtagcaggatgaagttgctgttgtttattttggatgtgagccaagggcttgagagctagaacaagactagtatagtgtgcacacacactaacttgcattctaaaactcttgtgtttgtgctgtattgcagGCTACAATACTCCCACTGAAATGACAGATGCAGACAGACTCATGGACAGTTGGTATCTGAAGTCACTCGGTGGCTTTATTACAGTGGTAACATCAGATGGAGACATGATCTTCTTATCGGAGAACATCAACAAtagtaacgcacactgtatcaacacatgaatcga"
-
-a6 = "NNNNNNNNNNNNGANNCTATAGAATACTCAAGCTATGCATCCAACGCGTTGGGAGCTCTCCCATATGGTCGACCTGCAGGCGGCCGCACTAGTGATTCACTGTTGTTAGGAGGGTTCAGAGTAGCAGGATGAAGTTGCTGTTGTTTATTTTGGATGTGAGCCAAGGGTTTGAGAGCTAGAACAAGACTAGTATAGTGTGCACACACACTAACATGCATTCTAAAACTCTTGTGTTTGTGCTGTATTGCAGGCTACGCTACTCCCACTGAAATGACAGACTCATCCATGACAGACTCATGGACAGTTGGTATCTGAAGTCACTCGGTGGCTTTATTACAGTGGTAACATCAGATGGAGACATGATCTTCTTATCGGAGAACATCAACAAATTCATGGGTCTCACTCAGGTGAGTAGTAACGCACACTGTATCAACACATGAATCGAAATCCCGCGGCCATGGCGGCCGGGAGCATGCGACGTCGGGCCCAATTCGCCCTATAGTGAGTCGTATTACAATTCACTGGCCGTCGTTTTACAACGTCGTGACTGGGAAAACCCTGGCGTTACCCAACTTAATCGCCTTGCAGCACATCCCCCTTTCGCCAGCTGGCGTAATAGCGAAGAGGCCCGCACCGATCGCCCTTCCCAACAGTTGCGCAGCCTGAATGGCGAATGGACGCGCCCTGTANCGGCGCATTAAGCGCGGCGGGTGTGGTGGTTACGCGCAGCGTGACCGCTACACTTGCCAGCGCCNTANCGCCCGCTCCTTTCGCTTTCTTCCCTTCCTTTCNCNNNCNNNCNNNNCTTTNCCNNNCNNGCTNNNANCGGGGGCTNCCTTTNNGGGNTNCCNATTTANNNCTTTANNGCNNCNNNNNNNNNNNNN"
-
-
-
-bind1 = "TACAATACTCCCACTGAA"
-bind2 = "ACTCATGGACAGTTGGTA"
-target = "ATGACAGATGCAGACAG"
+# bind1 = "TACAATACTCCCACTGAA"
+# bind2 = "ACTCATGGACAGTTGGTA"
+# target = "ATGACAGATGCAGACAG"
+#wt = "cactgttgttaggagggttcagagtagcaggatgaagttgctgttgtttattttggatgtgagccaagggcttgagagctagaacaagactagtatagtgtgcacacacactaacttgcattctaaaactcttgtgtttgtgctgtattgcagGCTACAATACTCCCACTGAAATGACAGATGCAGACAGACTCATGGACAGTTGGTATCTGAAGTCACTCGGTGGCTTTATTACAGTGGTAACATCAGATGGAGACATGATCTTCTTATCGGAGAACATCAACAAtagtaacgcacactgtatcaacacatgaatcga"
 
 
 def read_fasta(file_to_open):
@@ -30,7 +27,7 @@ def read_fasta(file_to_open):
 		record.length = None 
 		record.n_count = None 
 		record.n_pct = None 
-		record.initial_screen = None 
+		record.initial_screen = "Omitted" 
 		record.direction = None 
 		record.bind1dir = None 
 		record.bind2dir = None 
@@ -69,7 +66,11 @@ def annotate_sequence(sequence, bpcutoff, npctcutoff):
 def find_best_match_location(sequence, search_string):
 	
 	score_list = []
-	
+	#print sequence
+	#print sequence.initial_screen
+	#print len(sequence), "length of sequence"
+	#print len(search_string), "length of search string"
+	#if sequence.initial_screen == "OK":
 	# Make list of scores for each window
 	for i in range(0,len(sequence)-len(search_string)):
 		current_string = sequence[i: i+len(search_string)]
@@ -80,8 +81,13 @@ def find_best_match_location(sequence, search_string):
 			else:
 				score +=1
 		score_list.append(score)
-	
-	min_score_index = score_list.index(min(score_list))
+# 	else:
+# 		score_list = [None, None, None]
+	if score_list:
+		min_score_index = score_list.index(min(score_list))
+	else:
+		min_score_index = 0
+		score_list = [None]
 	
 	#returns tuple of search strings starting and ending index
 	# and match score
@@ -92,7 +98,7 @@ def find_best_match_location(sequence, search_string):
 def decide_sequence_direction(sequence, 
 							  fwd_tuple1, rev_tuple1, 
 							  fwd_tuple2, rev_tuple2):
-	
+
 	#define when to rule out too many errors in binding site
 	acceptable_pct_ns_in_binding_site = len(bind1)* 0.25
 	
@@ -104,41 +110,40 @@ def decide_sequence_direction(sequence,
 		fwd_tuple1[2] <= acceptable_pct_ns_in_binding_site 
 		and sequence.initial_screen == "OK"):	
 		sequence.bind1dir = "forward"
-		#sequence.property = (fwd_tuple[0], fwd_tuple[1])
-		
 	elif (fwd_tuple1[2] > rev_tuple1[2] and 
 		  rev_tuple1[2] <= acceptable_pct_ns_in_binding_site 
 		  and sequence.initial_screen == "OK"):
 		sequence.bind1dir = "reverse"
-		#sequence.property = (rev_tuple[0], rev_tuple[1])
-		
 	else:
 		sequence.bind1dir = "dunno"
 		
+	
 	#assigns bind1 direction based on score for scanning
 	#binding site 1 forward and reverse	
 	if (fwd_tuple2[2] < rev_tuple2[2] and 
 		fwd_tuple2[2] <= acceptable_pct_ns_in_binding_site 
 		and sequence.initial_screen == "OK"):	
 		sequence.bind2dir = "forward"
-		#sequence.property = (fwd_tuple[0], fwd_tuple[1])
-		
 	elif (fwd_tuple2[2] > rev_tuple2[2] and 
 		  rev_tuple2[2] <= acceptable_pct_ns_in_binding_site 
 		  and sequence.initial_screen == "OK"):
 		sequence.bind2dir = "reverse"
-		#sequence.property = (rev_tuple[0], rev_tuple[1])
-		
 	else:
 		sequence.bind2dir = "dunno"
+		
 		
 	#checks if bind1 and bind2 direction match. 	
 	if sequence.bind1dir == sequence.bind2dir:
 		sequence.direction = sequence.bind1dir
 	else:
 		sequence.direction = "conflicting directions"
+	
+		
+		
+	
 
 def find_distance_between_bind_sites(sequence, fwd1, rev1, fwd2, rev2):
+
 	if sequence.direction == "forward":
 		sequence.distance_between_sites = fwd2[0]-fwd1[1]
 		print sequence.name, sequence.distance_between_sites, "forward"
@@ -146,13 +151,15 @@ def find_distance_between_bind_sites(sequence, fwd1, rev1, fwd2, rev2):
 		sequence.distance_between_sites = rev2[0] - rev1[1]
 		print sequence.name, sequence.distance_between_sites, "reverse"
 	else:
+		print "This sequence didn't have a distance"
 		sequence.distance_between_sites = None
 	
 
 def main():
 	
 	#### SETUP ######
-	file_to_open = "epas1b.seq"
+	file_to_open = "nrxn1.seq"
+	#file_to_open = "epas1b.seq"
 	bp_cutoff_value = 275
 	n_pct_cutoff_value = 32
 	#sets how many digits for numbers defined as Decimal(#)
@@ -186,15 +193,9 @@ def main():
 								  fwd1, rev1, 
 								  fwd2, rev2)
 		
-		find_distance_between_bind_sites(sequence, fwd1, rev1, fwd2, rev2)
-								  
-								  
-		# print sequence.name, sequence.bind1dir, "bind1"
-# 		print sequence.name, sequence.bind2dir, "bind2"
-# 		print sequence.name, sequence.direction, "dir"
-# 		
-	
-	print dir(sequence_list[0])
+		find_distance_between_bind_sites(sequence, 
+										 fwd1, rev1, 
+										 fwd2, rev2)
 	
 	
 main()
