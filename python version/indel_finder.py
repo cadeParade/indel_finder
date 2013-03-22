@@ -34,6 +34,7 @@ def read_fasta(file_to_open):
 		record.direction = None 
 		record.bind1dir = None 
 		record.bind2dir = None 
+		record.distance_between_sites = None
 		
 	seq_file.close()
 	return sequence_list
@@ -137,6 +138,15 @@ def decide_sequence_direction(sequence,
 	else:
 		sequence.direction = "conflicting directions"
 
+def find_distance_between_bind_sites(sequence, fwd1, rev1, fwd2, rev2):
+	if sequence.direction == "forward":
+		sequence.distance_between_sites = fwd2[0]-fwd1[1]
+		print sequence.name, sequence.distance_between_sites, "forward"
+	elif sequence.direction == "reverse":
+		sequence.distance_between_sites = rev2[0] - rev1[1]
+		print sequence.name, sequence.distance_between_sites, "reverse"
+	else:
+		sequence.distance_between_sites = None
 	
 
 def main():
@@ -155,24 +165,34 @@ def main():
 	#test_list_indexes = [x-1 for x in test_list]
 	
 	for i, sequence in enumerate(sequence_list):
+		#adds basic properties like length, num ns, pct ns
 		annotate_sequence(sequence, 
 						  bp_cutoff_value, 
 						  n_pct_cutoff_value)
+		
+		#Finds location of best match for binding site 1
+		#in forward and reverse directions
 		fwd1  = find_best_match_location(sequence, bind1)
 		rev1 = find_best_match_location(sequence.reverse_complement(),
 									   bind1)
+		#Finds location of best match for binding site 2
+		#in forward and reverse directions
 		fwd2  = find_best_match_location(sequence, bind2)
 		rev2 = find_best_match_location(sequence.reverse_complement(),
 									   bind2)
-		
-		
+		#compares directions for binding site 1 and 2
+		#assigns overall sequence direction
 		decide_sequence_direction(sequence, 
 								  fwd1, rev1, 
 								  fwd2, rev2)
-		print sequence.name, sequence.bind1dir, "bind1"
-		print sequence.name, sequence.bind2dir, "bind2"
-		print sequence.name, sequence.direction, "dir"
 		
+		find_distance_between_bind_sites(sequence, fwd1, rev1, fwd2, rev2)
+								  
+								  
+		# print sequence.name, sequence.bind1dir, "bind1"
+# 		print sequence.name, sequence.bind2dir, "bind2"
+# 		print sequence.name, sequence.direction, "dir"
+# 		
 	
 	print dir(sequence_list[0])
 	
