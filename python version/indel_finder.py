@@ -4,6 +4,7 @@ import numpy as np
 import string
 import re
 from decimal import *
+from functools import partial
 
 #epas
 
@@ -26,6 +27,13 @@ def read_fasta(file_to_open):
 	for record in SeqIO.parse(seq_file, "fasta", 
 							  alphabet = generic_dna):
 		sequence_list.append(record)
+		record.length = None 
+		record.n_count = None 
+		record.n_pct = None 
+		record.initial_screen = None 
+		record.direction = None 
+		record.bind1dir = None 
+		record.bind2dir = None 
 		
 	seq_file.close()
 	return sequence_list
@@ -56,30 +64,12 @@ def annotate_sequence(sequence, bpcutoff, npctcutoff):
 		sequence.initial_screen = "sequence too short"
 	else:
 		sequence.initial_screen = "OK"	
-	
-	
-def decide_sequence_direction(sequence, fwd_tuple, rev_tuple):
-	if fwd_tuple[2] < rev_tuple[2] and fwd_tuple[2] < 3:
-		sequence.direction = "forward"
-		sequence.bind1 = (fwd_tuple[0], fwd_tuple[1])
-	elif fwd_tuple[2] > rev_tuple[2] and rev_tuple[2] < 3:
-		sequence.direction = "reverse"
-		sequence.bind1 = (rev_tuple[0], rev_tuple[1])
-	else:
-		sequence.direction = "dunno"
-	print sequence.name
-	print sequence.direction
-	print fwd_tuple[2]
-	print rev_tuple[2]
-	print sequence.n_pct
-	print sequence.initial_screen
 		
-
-
 def find_best_match_location(sequence, search_string):
 	
 	score_list = []
 	
+	# Make list of scores for each window
 	for i in range(0,len(sequence)-len(search_string)):
 		current_string = sequence[i: i+len(search_string)]
 		score = 0
@@ -98,6 +88,56 @@ def find_best_match_location(sequence, search_string):
 			min_score_index + len(search_string), 
 			min(score_list))
 	
+def decide_sequence_direction(sequence, 
+							  fwd_tuple1, rev_tuple1, 
+							  fwd_tuple2, rev_tuple2):
+	
+	#define when to rule out too many errors in binding site
+	acceptable_pct_ns_in_binding_site = len(bind1)* 0.25
+	
+	sequence_direction_list = []
+	
+	#assigns bind1 direction based on score for scanning
+	#binding site 1 forward and reverse
+	if (fwd_tuple1[2] < rev_tuple1[2] and 
+		fwd_tuple1[2] <= acceptable_pct_ns_in_binding_site 
+		and sequence.initial_screen == "OK"):	
+		sequence.bind1dir = "forward"
+		#sequence.property = (fwd_tuple[0], fwd_tuple[1])
+		
+	elif (fwd_tuple1[2] > rev_tuple1[2] and 
+		  rev_tuple1[2] <= acceptable_pct_ns_in_binding_site 
+		  and sequence.initial_screen == "OK"):
+		sequence.bind1dir = "reverse"
+		#sequence.property = (rev_tuple[0], rev_tuple[1])
+		
+	else:
+		sequence.bind1dir = "dunno"
+		
+	#assigns bind1 direction based on score for scanning
+	#binding site 1 forward and reverse	
+	if (fwd_tuple2[2] < rev_tuple2[2] and 
+		fwd_tuple2[2] <= acceptable_pct_ns_in_binding_site 
+		and sequence.initial_screen == "OK"):	
+		sequence.bind2dir = "forward"
+		#sequence.property = (fwd_tuple[0], fwd_tuple[1])
+		
+	elif (fwd_tuple2[2] > rev_tuple2[2] and 
+		  rev_tuple2[2] <= acceptable_pct_ns_in_binding_site 
+		  and sequence.initial_screen == "OK"):
+		sequence.bind2dir = "reverse"
+		#sequence.property = (rev_tuple[0], rev_tuple[1])
+		
+	else:
+		sequence.bind2dir = "dunno"
+		
+	#checks if bind1 and bind2 direction match. 	
+	if sequence.bind1dir == sequence.bind2dir:
+		sequence.direction = sequence.bind1dir
+	else:
+		sequence.direction = "conflicting directions"
+
+	
 
 def main():
 	
@@ -111,20 +151,30 @@ def main():
 	#running	
 	sequence_list = read_fasta(file_to_open)
 	
+	#test_list = [1,5,10,25,27,28,31,36,39,45,55,56,57,62,64,96]
+	#test_list_indexes = [x-1 for x in test_list]
+	
 	for i, sequence in enumerate(sequence_list):
 		annotate_sequence(sequence, 
 						  bp_cutoff_value, 
 						  n_pct_cutoff_value)
-		fwd  = find_best_match_location(sequence, bind1)
-		rev = find_best_match_location(sequence.reverse_complement(),
+		fwd1  = find_best_match_location(sequence, bind1)
+		rev1 = find_best_match_location(sequence.reverse_complement(),
 									   bind1)
-		decide_sequence_direction(sequence, fwd, rev)
+		fwd2  = find_best_match_location(sequence, bind2)
+		rev2 = find_best_match_location(sequence.reverse_complement(),
+									   bind2)
+		
+		
+		decide_sequence_direction(sequence, 
+								  fwd1, rev1, 
+								  fwd2, rev2)
+		print sequence.name, sequence.bind1dir, "bind1"
+		print sequence.name, sequence.bind2dir, "bind2"
+		print sequence.name, sequence.direction, "dir"
 		
 	
-	#annotate_sequences(sequence_list,
-	#				   bp_cutoff_value, 
-	#				   n_pct_cutoff_value)
-					   
-					   
+	print dir(sequence_list[0])
+	
 	
 main()
