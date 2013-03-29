@@ -5,25 +5,6 @@ from Bio.Alphabet import generic_dna
 from decimal import *
 import csv, re
 
-#nrxn
-#bind1 = "ATCTTCAGC" 
-#bind2 = "GATGAGGTT"
-#wt = "GCGCAGGAATTTCAAAAACACTACTTTAGTTGTGGACGAAGAAATCAAGTGGGT
-#GGAGGTAAAGTCGAAACGGAGGGACATGACGGTCTTCAGCCATTTATTCTTAGGGGGGATACC
-#TCCTGAACTGCGATCTGTAGCATTACGCCTCACATCTTCAGCCATAAAAGATGAGGTTCCCT
-#ACAAAGGATGGATAACCAACCTGAGAGTGAACGGCTCGGAGCCGGTGCTTATCGGTAGCGA
-#TGGAGTCAACAGCGACATTTGCGAAGCCGACCACATTTGCCTGAATGGAGGAGT"
-
-#epas
-#bind1 = "TACAATACTCCCACTGAA"
-#bind2 = "ACTCATGGACAGTTGGTA"
-# target = "ATGACAGATGCAGACAG"
-#wt = "cactgttgttaggagggttcagagtagcaggatgaagttgctgttgtttattttggatgtgagccaagggctt
-#gagagctagaacaagactagtatagtgtgcacacacactaacttgcattctaaaactcttgtgtttgtgctgtattgc
-#agGCTACAATACTCCCACTGAAATGACAGATGCAGACAGACTCATGGACAGTTGGTATCTGAAGTCACTCGGTGGCT
-#TTATTACAGTGGTAACATCAGATGGAGACATGATCTTCTTATCGGAGAACATCAACAAtagtaacgcacactgtatcaa
-#cacatgaatcga"
-
 def analyze_wt(wt, b1, b2):
 	b1_end_ind = wt.seq.find(b1) + len(b1)
 	b2_start_ind = wt.seq.find(b2)
@@ -198,17 +179,12 @@ def write_fasta(output_list, wt):
 	SeqIO.write(seqs_same_dir, output_handle, "fasta")
 	output_handle.close()
 
-def find_avg_start_matches(sequence):
-	add = 0
-	starting_pos_sum = 0
-
 
 def main_for_loop(sequence_list, bind1, bind2, wt_dist):
 
 	bp_cutoff_value = 275
 	n_pct_cutoff_value = 32
 	output_list = []
-	fwd_seq_start_count = 0
 
 	for i, sequence in enumerate(sequence_list):
 		#adds basic properties like length, num ns, pct ns
@@ -227,15 +203,13 @@ def main_for_loop(sequence_list, bind1, bind2, wt_dist):
 		rev2 = find_best_match_location(sequence.reverse_complement(),
 									    bind2)
 
+
 		#compares directions for binding site 1 and 2
 		#assigns overall sequence direction
 		decide_sequence_direction(sequence, 
 								  fwd1, rev1, 
 								  fwd2, rev2,
 								  bind1)
-
-		if sequence.direction == "forward":
-			fwd_seq_start_count += 1
 		
 		find_distance_between_bind_sites(sequence, 
 										 fwd1, rev1, 
@@ -246,9 +220,8 @@ def main_for_loop(sequence_list, bind1, bind2, wt_dist):
 			sequence.distance_between_sites != None):
 			output_list.append(sequence)
 
-	print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-	print fwd_seq_start_count
 	return output_list
+
 
 def sanitize_wt(wt):
 	wt = wt.replace(" ", "")
@@ -264,8 +237,6 @@ def make_string_seqrecord(wt, id_txt, name = " ", desc = " " ):
 def main(b1, b2, gene_name, wt, sequences):
 	
 	#### SETUP ######
-	#file_to_open = "nrxn1.seq"
-	#file_to_open = "epas1b.seq"
 	bind1 = b1
 	bind2 = b2
 	sequences = sequences
@@ -276,7 +247,6 @@ def main(b1, b2, gene_name, wt, sequences):
 	file_to_open = create_temp_file(sequences)
 	sequence_list = read_fasta(file_to_open)
 	output_list = main_for_loop(sequence_list, bind1, bind2, wt_dist)
-	print sequence_list[7]
 	html_data = make_html_table(sequence_list)
 	write_fasta(output_list, wt)
 	return html_data
