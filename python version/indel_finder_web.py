@@ -4,6 +4,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import generic_dna
 from decimal import *
 import csv, re
+import StringIO
 
 def analyze_wt(wt, b1, b2):
 	b1_end_ind = wt.seq.find(b1) + len(b1)
@@ -11,20 +12,14 @@ def analyze_wt(wt, b1, b2):
 	wt_distance_between_sites = b2_start_ind - b1_end_ind
 	return wt_distance_between_sites
 
-def create_temp_file(sequences):
-	temp_file = open("temp.seq", 'w+b')
-	temp_file.write(sequences)
-	temp_file.close()
 
-	return "temp.seq"
-
-def read_fasta(file_to_open):	
-	seq_file = open(file_to_open, "rU")
+def read_fasta( sequences):
+	#creates file-like object
+	sequence_file = StringIO.StringIO(sequences)
 	sequence_list = []
 	
-	for record in SeqIO.parse(seq_file, "fasta", 
+	for record in SeqIO.parse(sequence_file, "fasta", 
 							  alphabet = generic_dna):
-		sequence_list.append(record)
 		record.initial_screen = "Omitted" 
 		record.length = None 
 		record.n_count = None 
@@ -36,8 +31,10 @@ def read_fasta(file_to_open):
 		record.score = None
 		record.b1 = None
 		record.b2 = None
-		
-	seq_file.close()
+		record.is_indel = None
+
+		sequence_list.append(record)
+
 	return sequence_list
 	
 def annotate_sequence(sequence, bpcutoff, npctcutoff):
@@ -61,7 +58,7 @@ def annotate_sequence(sequence, bpcutoff, npctcutoff):
 	if (sequence.n_pct > npctcutoff and 
 		sequence.length < bpcutoff):
 		sequence.initial_screen = ("sequence too short" + 
-								   "and too many N's")
+								   " and too many N's")
 	elif sequence.n_pct > npctcutoff:
 		sequence.initial_screen = "too many N's"
 	elif sequence.length < bpcutoff:
@@ -151,20 +148,37 @@ def find_distance_between_bind_sites(sequence, fwd1, rev1, fwd2, rev2):
 	
 
 def make_html_table(sequence_list):
-	#rdr = csv.reader(open("summary.csv", "r"))
 	csv_data = []
 	csv_data.append(["well name", "SPACER LENGTH", "initial screen", "seq length", "pct n's",
-					 "seq direction", "bind seq 1", "bind seq 2", "match score"])
+					 "seq direction", "bind seq 1", "bind seq 2", "match score", None])
 	for well in sequence_list:
 
 		if well.direction == "forward" or well.direction == "reverse":
 			csv_data.append([well.name, well.distance_between_sites, well.initial_screen, well.length,
-			 			 	 well.n_pct, well.direction, well.b1, well.b2, well.score])
+			 			 	 well.n_pct, well.direction, well.b1, well.b2, well.score, well.is_indel])
 		else:
 			csv_data.append([well.name, well.distance_between_sites, well.initial_screen, well.length,
-						 	 well.n_pct, well.direction, "none", "none", "none"])
+						 	 well.n_pct, well.direction, "none", "none", "none", well.is_indel])
 
 	return csv_data
+
+
+def make_csv(sequence_list):
+
+	myfile = open("summary.csv", 'w+b')
+
+	wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+	wr.writerow(["well no", "initial screen", "seq length", 
+				"pct n", "direction", "spacer length"])
+	for i,well in enumerate(sequence_list):
+
+		row_list = [well.name, well.initial_screen, well.length,
+					well.n_pct, well.direction, well.distance_between_sites]
+		wr.writerow(row_list)
+
+	myfile.close()
+	return myfile
+
 
 def write_fasta(output_list, wt):
 	seqs_same_dir = [wt]
@@ -218,8 +232,11 @@ def main_for_loop(sequence_list, bind1, bind2, wt_dist):
 		#makes list to put into fasta file
 		if (sequence.distance_between_sites != wt_dist and
 			sequence.distance_between_sites != None):
-			output_list.append(sequence)
+			sequence.is_indel = True
 
+
+def make_output_list(sequence_list):
+	output_list = [seq for seq in sequence_list if seq.is_indel == True]
 	return output_list
 
 
@@ -230,23 +247,31 @@ def sanitize_wt(wt):
 def make_string_seqrecord(wt, id_txt, name = " ", desc = " " ):
 
 	wt = SeqRecord(Seq(wt, generic_dna), id = "wt", name = "wt", description = "wt")
-	#wt.id = wt
 	wt.direction = "forward"
 	return wt
 
-def main(b1, b2, gene_name, wt, sequences):
-	
+def find_indels(b1, b2, gene_name, wt, sequences):
 	#### SETUP ######
 	bind1 = b1
 	bind2 = b2
 	sequences = sequences
 	gene_name = gene_name
-	wt = sanitize_wt(wt)
-	wt = make_string_seqrecord(wt, "wt")
+	wt = make_string_seqrecord(sanitize_wt(wt), "wt")
 	wt_dist = analyze_wt(wt, b1, b2)
-	file_to_open = create_temp_file(sequences)
-	sequence_list = read_fasta(file_to_open)
-	output_list = main_for_loop(sequence_list, bind1, bind2, wt_dist)
+
+	#### ANALYSIS #####
+	sequence_list = read_fasta(sequences)
+	main_for_loop(sequence_list, bind1, bind2, wt_dist)
+
+	return sequence_list
+
+def outputs(sequence_list, wt):	
+	wt = make_string_seqrecord(sanitize_wt(wt), "wt")
 	html_data = make_html_table(sequence_list)
+	output_list = make_output_list(sequence_list)
 	write_fasta(output_list, wt)
+
 	return html_data
+
+
+

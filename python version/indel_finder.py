@@ -1,10 +1,7 @@
 from Bio import SeqIO
 from Bio.Alphabet import generic_dna
-import numpy as np
-import string
-import re
 from decimal import *
-import csv
+import csv, re
 
 #nrxn
 #bind1 = "ATCTTCAGC" 
@@ -17,13 +14,33 @@ bind2 = "ACTCATGGACAGTTGGTA"
 #wt = "cactgttgttaggagggttcagagtagcaggatgaagttgctgttgtttattttggatgtgagccaagggcttgagagctagaacaagactagtatagtgtgcacacacactaacttgcattctaaaactcttgtgtttgtgctgtattgcagGCTACAATACTCCCACTGAAATGACAGATGCAGACAGACTCATGGACAGTTGGTATCTGAAGTCACTCGGTGGCTTTATTACAGTGGTAACATCAGATGGAGACATGATCTTCTTATCGGAGAACATCAACAAtagtaacgcacactgtatcaacacatgaatcga"
 
 
+def create_temp_file(sequences):
+	temp_file = open("temp.fasta", 'w+b')
+
+	temp_file.write(sequences)
+	temp_file.close()
+
+	return "temp.fasta"
+	# wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+	# wr.writerow(["well no", "initial screen", "seq length", 
+	# 			"pct n", "direction", "spacer length"])
+	# for i,well in enumerate(sequence_list):
+
+	# 	row_list = [well.name, well.initial_screen, well.length,
+	# 				well.n_pct, well.direction, well.distance_between_sites]
+	# 	wr.writerow(row_list)
+
+
+
 def read_fasta(file_to_open):
 	
 	seq_file = open(file_to_open, "rU")
+	print seq_file, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 	sequence_list = []
 	
 	for record in SeqIO.parse(seq_file, "fasta", 
 							  alphabet = generic_dna):
+		print record
 		sequence_list.append(record)
 		record.initial_screen = "Omitted" 
 		record.length = None 
@@ -38,7 +55,9 @@ def read_fasta(file_to_open):
 	return sequence_list
 	
 def annotate_sequence(sequence, bpcutoff, npctcutoff):
-
+	#sets how many digits for numbers defined as Decimal(#)
+	getcontext().prec = 3
+	
 	#assign well number to name field
 	current_well_no = re.split("([A-H])(\\d\\d)", sequence.name)
 	current_well_no = "".join(current_well_no[1:3])
@@ -64,10 +83,10 @@ def annotate_sequence(sequence, bpcutoff, npctcutoff):
 	else:
 		sequence.initial_screen = "OK"	
 		
+
 def find_best_match_location(sequence, search_string):
 	
 	score_list = []
-
 	# Make list of scores for each window
 	for i in range(0,len(sequence)-len(search_string)):
 		current_string = sequence[i: i+len(search_string)]
@@ -90,6 +109,7 @@ def find_best_match_location(sequence, search_string):
 	return (min_score_index, 
 			min_score_index + len(search_string), 
 			min(score_list))
+
 	
 def decide_sequence_direction_for_one_only(sequence,
  										   fwd_tuple,
@@ -107,7 +127,8 @@ def decide_sequence_direction_for_one_only(sequence,
 		  and sequence.initial_screen == "OK"):
 		return "reverse"
 	else:
- 		return "dunno"   
+ 		return "dunno"  
+
 										
 def decide_sequence_direction(sequence, 
 							  fwd_tuple1, rev_tuple1, 
@@ -152,8 +173,7 @@ def main_for_loop(sequence_list):
 
 	bp_cutoff_value = 275
 	n_pct_cutoff_value = 32
-	#sets how many digits for numbers defined as Decimal(#)
-	getcontext().prec = 3
+
 
 	for i, sequence in enumerate(sequence_list):
 		#adds basic properties like length, num ns, pct ns
@@ -188,7 +208,8 @@ def main():
 	#file_to_open = "nrxn1.seq"
 	file_to_open = "epas1b.seq"
 	sequence_list = read_fasta(file_to_open)
+	print dir(sequence_list[1])
 	main_for_loop(sequence_list)
 	make_csv(sequence_list)
 	
-main()
+#main()

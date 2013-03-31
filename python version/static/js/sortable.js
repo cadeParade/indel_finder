@@ -9,10 +9,10 @@ Version 1.5.7
 */
 
 /* You can change these values */
-var image_path = "http://www.joostdevalk.nl/code/sortable-table/";
-var image_up = "arrowup.gif";
-var image_down = "arrowdown.gif";
-var image_none = "arrownone.gif";
+var image_path = "/static/img/";
+var image_up = "up.gif";
+var image_down = "down.gif";
+var image_none = "none.gif";
 var europeandate = true;
 var alternate_row_colors = true;
 
@@ -317,7 +317,8 @@ function alternate(table) {
 						tableRows[j].className += " odd";
 					}
 				}
-			} 
+			}
+			
 		}
 	}
 }
