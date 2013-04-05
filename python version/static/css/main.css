@@ -13,3 +13,9 @@ tr.indel {
 .float_right {
 	float: right;
 	padding-right: 30px;
+}
+
+.float_right form {
+	float: right;
+	padding-left: 30px;
+}

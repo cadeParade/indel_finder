@@ -11,10 +11,15 @@
 <p>
 	<h1>Indel Finder App 
 		<div class="float_right">
-			<form action = "FASTA", methods = "GET">
+			<form action = "fasta" method = "POST">
+				<input type = "hidden" value = "{{ gene_name }}" name = "gene_name">
+				<input type = "hidden" value = "{{ sequences }}" name = "sequences">
+				<input type="hidden" value = "{{ b1 }}" name="b1">
+				<input type="hidden" value = "{{ b2 }}" name="b2">
+				<input type="hidden" value = "{{ wt }}" name ="wt">
 				<input type="submit" class = "btn" value="Download Fasta of indel seqs">
 			</form>
-			<form action = "csv", methods = "GET">
+			<form action = "csv" method = "POST">
 				<input type = "hidden" value = "{{ gene_name }}" name = "gene_name">
 				<input type = "hidden" value = "{{ sequences }}" name = "sequences">
 				<input type="hidden" value = "{{ b1 }}" name="b1">
@@ -31,7 +36,7 @@
 		<div class="float_right"> Click column headers to sort</div><br>
 </p>
 
-<table class="sortable table" id = "sortabletable">
+<table class="sortable table" id = "sortabletable" >
 {% for row in data %}
 <tr {%- if row.9 %} class = "indel" {% endif %}>
     <td>{{ row.0 }}</td>

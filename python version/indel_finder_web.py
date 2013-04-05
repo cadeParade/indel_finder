@@ -148,50 +148,56 @@ def find_distance_between_bind_sites(sequence, fwd1, rev1, fwd2, rev2):
 	
 
 def make_html_table(sequence_list):
-	csv_data = []
-	csv_data.append(["well name", "SPACER LENGTH", "initial screen", "seq length", "pct n's",
+	table_data = []
+	table_data.append(["well name", "SPACER LENGTH", "initial screen", "seq length", "pct n's",
 					 "seq direction", "bind seq 1", "bind seq 2", "match score", None])
 	for well in sequence_list:
 
 		if well.direction == "forward" or well.direction == "reverse":
-			csv_data.append([well.name, well.distance_between_sites, well.initial_screen, well.length,
+			table_data.append([well.name, well.distance_between_sites, well.initial_screen, well.length,
 			 			 	 well.n_pct, well.direction, well.b1, well.b2, well.score, well.is_indel])
 		else:
-			csv_data.append([well.name, well.distance_between_sites, well.initial_screen, well.length,
+			table_data.append([well.name, well.distance_between_sites, well.initial_screen, well.length,
 						 	 well.n_pct, well.direction, "none", "none", "none", well.is_indel])
 
-	return csv_data
+	return table_data
 
 
 def make_csv(sequence_list):
 
-	myfile = open("summary.csv", 'w+b')
+	csv_file = open("summary.csv", 'w+b')
 
-	wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-	wr.writerow(["well no", "initial screen", "seq length", 
-				"pct n", "direction", "spacer length"])
+	wr = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
+	wr.writerow(["well no", "spacer length", "initial screen", "seq length", 
+				"pct n", "direction", "bind site 1", "bind site 2", "match score"])
 	for i,well in enumerate(sequence_list):
 
-		row_list = [well.name, well.initial_screen, well.length,
-					well.n_pct, well.direction, well.distance_between_sites]
+		row_list = [well.name, well.distance_between_sites, well.initial_screen, well.length,
+			 			 	 well.n_pct, well.direction, well.b1, well.b2, well.score,]
 		wr.writerow(row_list)
 
-	myfile.close()
-	return myfile
 
+	csv_file.close()
+	return csv_file
 
 def write_fasta(output_list, wt):
+	#initialize list with WT seq first
 	seqs_same_dir = [wt]
 	for seq in output_list:
 		if seq.direction == "reverse":
-			seq.seq = seq.seq.reverse_complement()
-			seqs_same_dir.append(seq)			
-		else:
+			seq.id = seq.name
+			rc_seq = seq.reverse_complement()
 			seqs_same_dir.append(seq)
+		else:
+			seq.id = seq.name
+			seqs_same_dir.append(seq)
+
 	
 	output_handle = open("align.seq", "w+b")
 	SeqIO.write(seqs_same_dir, output_handle, "fasta")
 	output_handle.close()
+
+	return output_handle
 
 
 def main_for_loop(sequence_list, bind1, bind2, wt_dist):
@@ -263,9 +269,11 @@ def find_indels(b1, b2, gene_name, wt, sequences):
 	sequence_list = read_fasta(sequences)
 	main_for_loop(sequence_list, bind1, bind2, wt_dist)
 
+	#x = make_csv(sequence_list)
+
 	return sequence_list
 
-def outputs(sequence_list, wt):	
+def outputs_html(sequence_list, wt):	
 	wt = make_string_seqrecord(sanitize_wt(wt), "wt")
 	html_data = make_html_table(sequence_list)
 	output_list = make_output_list(sequence_list)
