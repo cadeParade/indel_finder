@@ -1,0 +1,56 @@
+<html>
+<head>
+	<title>Indel Finder</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link href="/static/css/bootstrap.css" rel="stylesheet">
+	<link rel="stylesheet" href="/static/css/main.css" type = "text/css">
+	<script type="text/javascript" src="/static/js/sortable.js"></script>
+</head>
+
+<body style = "margin-left: 30px">
+<p>
+	<h1>Indel Finder App 
+		<div class="float_right">
+			<form action = "fasta" method = "POST">
+				<input type = "hidden" value = "{{ gene_name }}" name = "gene_name">
+				<input type = "hidden" value = "{{ sequences }}" name = "sequences">
+				<input type="hidden" value = "{{ b1 }}" name="b1">
+				<input type="hidden" value = "{{ b2 }}" name="b2">
+				<input type="hidden" value = "{{ wt }}" name ="wt">
+				<input type="submit" class = "btn" value="Download Fasta of indel seqs">
+			</form>
+			<form action = "csv" method = "POST">
+				<input type = "hidden" value = "{{ gene_name }}" name = "gene_name">
+				<input type = "hidden" value = "{{ sequences }}" name = "sequences">
+				<input type="hidden" value = "{{ b1 }}" name="b1">
+				<input type="hidden" value = "{{ b2 }}" name="b2">
+				<input type="hidden" value = "{{ wt }}" name ="wt">
+				<input type="submit" class = "btn" value="Download this table as csv">
+			</form>
+		</div></h1> 
+</p>
+<p>
+	<h3>Gene: {{ gene_name}}</h3>
+		Binding site 1 = {{b1}}<br>
+		Binding site 2 = {{b2}} 
+		<div class="float_right"> Click column headers to sort</div><br>
+</p>
+
+<table class="sortable table" id = "sortabletable" >
+{% for row in data %}
+<tr {%- if row.9 %} class = "indel" {% endif %}>
+    <td>{{ row.0 }}</td>
+    <td>{{ row.1 }}</td>
+    <td>{{ row.2 }}</td>
+    <td>{{ row.3 }}</td>
+    <td>{{ row.4 }}</td>
+    <td>{{ row.5 }}</td>
+    <td>{{ row.6 }}</td>
+    <td>{{ row.7 }}</td>
+    <td>{{ row.8 }}</td>
+</tr>
+{% endfor %}
+
+</table>
+</body>
+</html>
